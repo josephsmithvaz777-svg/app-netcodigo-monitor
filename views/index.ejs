@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Códigos Netflix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .code-card {
+            transition: all 0.3s ease;
+        }
+        .code-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .new-flash {
+            animation: flash 2s;
+        }
+        @keyframes flash {
+            0% { background-color: #fee2e2; }
+            100% { background-color: white; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-red-600 text-3xl">N</span> Monitor de Códigos
+                </h1>
+                <p class="text-slate-500 text-sm mt-1">Monitoreando <%= accounts.length %> cuentas activas</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="/settings" class="text-slate-500 hover:text-slate-800 transition-colors" title="Configuración">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                </a>
+                <div id="connection-status" class="bg-green-100 text-green-800 px-4 py-2 rounded-full text-xs font-medium flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    Sistema Activo
+                </div>
+            </div>
+        </header>
+
+        <div id="codes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <% codes.forEach(function(code) { %>
+                <!-- Renderizado inicial (SSR) -->
+                <div class="code-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500" id="card-<%= code.email.replace(/[^a-zA-Z0-9]/g, '') %>">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-mono">
+                            <%= new Date(code.timestamp).toLocaleTimeString() %>
+                        </span>
+                        <span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded uppercase tracking-wider">
+                            <%= code.type %>
+                        </span>
+                    </div>
+                    
+                    <div class="text-center py-4">
+                        <div class="text-5xl font-mono font-bold text-slate-800 tracking-wider select-all cursor-pointer transition-colors" onclick="copyToClipboard(this)">
+                            <%= code.code %>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">Click para copiar</p>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-slate-300"></div>
+                        <p class="text-sm text-slate-600 truncate font-medium" title="<%= code.email %>">
+                            <%= code.email %>
+                        </p>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+        
+        <div id="empty-state" class="<%= codes.length > 0 ? 'hidden' : '' %> text-center py-20">
+            <div class="bg-white p-8 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center shadow-sm">
+                <span class="text-4xl">📭</span>
+            </div>
+            <h3 class="text-xl text-slate-600 font-medium">Esperando códigos...</h3>
+            <p class="text-slate-400 mt-2">El sistema está escuchando nuevos correos.</p>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const grid = document.getElementById('codes-grid');
+        const emptyState = document.getElementById('empty-state');
+
+        socket.on('new-code', (data) => {
+            console.log('Nuevo código:', data);
+            updateOrAddCard(data);
+            emptyState.classList.add('hidden');
+        });
+
+        function updateOrAddCard(data) {
+            const safeId = data.email.replace(/[^a-zA-Z0-9]/g, '');
+            const existingCard = document.getElementById('card-' + safeId);
+            
+            // Si ya existe, la eliminamos para poner la nueva al principio
+            if (existingCard) {
+                existingCard.remove();
+            }
+
+            const timeString = new Date(data.timestamp).toLocaleTimeString();
+            
+            const cardHtml = `
+                <div class="code-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500 new-flash" id="card-${safeId}">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-mono">
+                            ${timeString}
+                        </span>
+                        <span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded uppercase tracking-wider">
+                            ${data.type}
+                        </span>
+                    </div>
+                    
+                    <div class="text-center py-4">
+                        <div class="text-5xl font-mono font-bold text-slate-800 tracking-wider select-all cursor-pointer transition-colors" onclick="copyToClipboard(this)">
+                            ${data.code}
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">Click para copiar</p>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-slate-300"></div>
+                        <p class="text-sm text-slate-600 truncate font-medium" title="${data.email}">
+                            ${data.email}
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            grid.insertAdjacentHTML('afterbegin', cardHtml);
+        }
+
+        function copyToClipboard(element) {
+            const text = element.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalColor = element.style.color;
+                element.style.color = '#10B981'; // Emerald 500
+                element.innerText = 'COPIADO';
+                element.style.fontSize = '2rem'; // Reducir tamaño temporalmente
+                
+                setTimeout(() => {
+                    element.style.color = originalColor;
+                    element.innerText = text;
+                    element.style.fontSize = ''; // Restaurar tamaño
+                }, 800);
+            });
+        }
+    </script>
+</body>
+</html>

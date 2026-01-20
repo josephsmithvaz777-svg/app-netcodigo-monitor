@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-6">
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-slate-600">⚙️</span> Configuración
+                </h1>
+                <p class="text-slate-500 text-sm mt-1">Elige cómo quieres recibir los correos</p>
+            </div>
+            <a href="/" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                ← Volver al Monitor
+            </a>
+        </header>
+
+        <!-- Selector de Modo -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Método de Recepción</h2>
+            <div class="flex gap-4 mb-6">
+                <button onclick="setMode('imap')" class="flex-1 p-4 border-2 rounded-xl text-left transition-all <%= settings.mode === 'imap' ? 'border-red-500 bg-red-50' : 'border-slate-200 hover:border-slate-300' %>">
+                    <div class="font-bold <%= settings.mode === 'imap' ? 'text-red-700' : 'text-slate-700' %>">📧 IMAP (Gmail/Outlook)</div>
+                    <div class="text-sm text-slate-500 mt-1">Tu servidor se conecta a leer correos cada cierto tiempo.</div>
+                </button>
+                <button onclick="setMode('mailgun')" class="flex-1 p-4 border-2 rounded-xl text-left transition-all <%= settings.mode === 'mailgun' ? 'border-red-500 bg-red-50' : 'border-slate-200 hover:border-slate-300' %>">
+                    <div class="font-bold <%= settings.mode === 'mailgun' ? 'text-red-700' : 'text-slate-700' %>">🚀 Mailgun (Webhook)</div>
+                    <div class="text-sm text-slate-500 mt-1">Mailgun empuja los correos a tu servidor al instante.</div>
+                </button>
+            </div>
+
+            <!-- Contenido Modo IMAP -->
+            <div id="imap-section" class="<%= settings.mode === 'imap' ? '' : 'hidden' %>">
+                <% if (accounts.length > 0) { %>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold text-blue-700">Cuenta Activa (IMAP):</p>
+                                <p class="text-blue-900 font-mono text-lg"><%= accounts[0].user %></p>
+                                <p class="text-sm text-blue-600 mt-1">Servidor: <%= accounts[0].host %></p>
+                            </div>
+                            <button onclick="deleteAccount('<%= accounts[0].user %>')" class="bg-white text-red-500 hover:text-red-700 border border-red-200 hover:border-red-300 px-3 py-1 rounded text-sm font-medium transition-colors shadow-sm">
+                                Desconectar
+                            </button>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <form id="add-account-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Correo Electrónico Maestro</label>
+                            <input type="email" name="user" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" placeholder="central@tuempresa.com">
+                        </div>
+                        
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña de Aplicación</label>
+                            <input type="password" name="pass" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" placeholder="••••••••••••••••">
+                            <p class="text-xs text-slate-400 mt-1">Usa una "Contraseña de Aplicación", no tu contraseña habitual.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Host IMAP</label>
+                            <select name="host" id="host-select" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white">
+                                <option value="imap.gmail.com">Gmail (imap.gmail.com)</option>
+                                <option value="outlook.office365.com">Outlook/Office365 (Recomendado)</option>
+                                <option value="imap-mail.outlook.com">Outlook/Hotmail (Legacy)</option>
+                                <option value="custom">Otro...</option>
+                            </select>
+                            <input type="text" name="custom_host" id="custom-host" class="w-full px-3 py-2 border border-slate-300 rounded-lg mt-2 hidden" placeholder="imap.ejemplo.com">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Puerto</label>
+                            <input type="number" name="port" value="993" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+                        </div>
+
+                        <div class="flex items-center mt-6">
+                            <input type="checkbox" name="secure" id="secure" checked class="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500">
+                            <label for="secure" class="ml-2 text-sm text-slate-700">Usar SSL/TLS (Seguro)</label>
+                        </div>
+
+                        <div class="col-span-1 md:col-span-2 flex justify-end mt-2">
+                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-red-200">
+                                Conectar IMAP
+                            </button>
+                        </div>
+                    </form>
+                <% } %>
+            </div>
+
+            <!-- Contenido Modo Mailgun -->
+            <div id="mailgun-section" class="<%= settings.mode === 'mailgun' ? '' : 'hidden' %>">
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-6">
+                    <h3 class="font-bold text-slate-800 mb-4">Pasos para configurar Mailgun:</h3>
+                    
+                    <ol class="list-decimal ml-5 space-y-4 text-sm text-slate-600">
+                        <li>
+                            <p class="font-medium text-slate-800">Copia tu URL de Webhook:</p>
+                            <div class="flex gap-2 mt-2">
+                                <input type="text" readonly id="webhook-url" value="Detectando..." class="w-full bg-white border border-slate-300 rounded px-3 py-2 font-mono text-xs select-all">
+                                <button onclick="copyWebhook()" class="bg-slate-200 hover:bg-slate-300 px-3 py-2 rounded text-slate-700">Copiar</button>
+                            </div>
+                            <p class="text-xs text-amber-600 mt-1">⚠️ Asegúrate de reemplazar 'localhost' por tu dominio público (ej. en Coolify).</p>
+                        </li>
+                        <li>
+                            <p class="font-medium text-slate-800">En Mailgun, ve a <strong>Receiving > Routes</strong> y crea una ruta:</p>
+                            <ul class="list-disc ml-5 mt-1 space-y-1">
+                                <li><strong>Expression Type:</strong> Match Recipient</li>
+                                <li><strong>Recipient:</strong> <code>.*@tudominio.com</code> (o tu dominio de sandbox)</li>
+                                <li><strong>Actions:</strong> Forward to URL</li>
+                                <li><strong>URL:</strong> Pega la URL del paso 1</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p class="font-medium text-slate-800">Configura la Signing Key (Opcional pero recomendado):</p>
+                            <p class="mb-2">Obtenla en Settings > API Keys > HTTP Webhook Signing Key</p>
+                            <div class="flex gap-2">
+                                <input type="password" id="mailgun-key" placeholder="Pegar HTTP Webhook Signing Key" value="<%= settings.mailgunSigningKey || '' %>" class="flex-1 border border-slate-300 rounded px-3 py-2">
+                                <button onclick="saveMailgunKey()" class="bg-blue-600 text-white px-4 rounded hover:bg-blue-700">Guardar Key</button>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Actualizar URL del webhook basada en el navegador
+        const webhookUrlInput = document.getElementById('webhook-url');
+        if (webhookUrlInput) {
+            const currentUrl = window.location.origin;
+            webhookUrlInput.value = `${currentUrl}/webhooks/mailgun`;
+        }
+
+        function copyWebhook() {
+            const copyText = document.getElementById("webhook-url");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); 
+            navigator.clipboard.writeText(copyText.value);
+            alert("URL copiada al portapapeles");
+        }
+
+        async function setMode(mode) {
+            try {
+                const res = await fetch('/api/settings/mode', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ mode })
+                });
+                if (res.ok) window.location.reload();
+            } catch(e) { alert('Error cambiando modo'); }
+        }
+
+        async function saveMailgunKey() {
+            const key = document.getElementById('mailgun-key').value;
+            try {
+                const res = await fetch('/api/settings/mode', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ mode: 'mailgun', mailgunSigningKey: key })
+                });
+                if (res.ok) alert('Key guardada correctamente');
+            } catch(e) { alert('Error guardando key'); }
+        }
+
+        // ... resto del script de IMAP (hostSelect, addForm, deleteAccount) ...
+        const hostSelect = document.getElementById('host-select');
+        const customHostInput = document.getElementById('custom-host');
+        if (hostSelect) {
+            hostSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'custom') {
+                    customHostInput.classList.remove('hidden');
+                    customHostInput.required = true;
+                } else {
+                    customHostInput.classList.add('hidden');
+                    customHostInput.required = false;
+                }
+            });
+        }
+
+        const addForm = document.getElementById('add-account-form');
+        if (addForm) {
+            addForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                if (data.host === 'custom') data.host = data.custom_host;
+
+                try {
+                    const response = await fetch('/api/accounts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (response.ok) window.location.reload();
+                    else {
+                        const error = await response.json();
+                        alert('Error: ' + error.error);
+                    }
+                } catch (err) { alert('Error de conexión'); }
+            });
+        }
+
+        async function deleteAccount(email) {
+            if (!confirm('¿Desconectar la cuenta?')) return;
+            try {
+                const response = await fetch('/api/accounts/' + encodeURIComponent(email), { method: 'DELETE' });
+                if (response.ok) window.location.reload();
+                else alert('Error eliminando cuenta');
+            } catch (err) { alert('Error de conexión'); }
+        }
+    </script>
+</body>
+</html>

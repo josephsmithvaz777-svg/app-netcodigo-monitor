@@ -1,0 +1,16 @@
+[
+  {
+    "user": "cuenta1@gmail.com",
+    "pass": "contraseña_o_app_password",
+    "host": "imap.gmail.com",
+    "port": 993,
+    "secure": true
+  },
+  {
+    "user": "cuenta2@outlook.com",
+    "pass": "contraseña",
+    "host": "outlook.office365.com",
+    "port": 993,
+    "secure": true
+  }
+]
