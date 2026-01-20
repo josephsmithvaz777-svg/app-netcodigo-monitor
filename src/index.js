@@ -131,6 +131,10 @@ app.delete('/api/accounts/:email', async (req, res) => {
 });
 
 // WEBHOOK MAILGUN
+app.get('/webhooks/mailgun', (req, res) => {
+    res.status(200).send('Mailgun Webhook is active');
+});
+
 app.post('/webhooks/mailgun', upload.any(), (req, res) => {
     // Mailgun envía datos en body (multipart parseado por multer)
     // Los campos principales son 'signature', 'token', 'timestamp', 'body-plain', etc.
