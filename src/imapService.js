@@ -143,19 +143,18 @@ class ImapService extends EventEmitter {
             if (linkMatch) {
                 const url = linkMatch[1].replace(/&amp;/g, '&'); // Decodificar ampersands
                 
-                // Si el usuario prefiere ver el enlace directamente (útil si falla el auto-fetch)
-                // O si queremos mostrar ambos. Por ahora, intentamos sacar el código.
-                // Pero si el usuario pide "enviar el enlace", podemos guardar la URL como "código"
-                // o intentar obtener el código y si falla, devolver la URL.
+                // Si el usuario pide explícitamente solo el enlace y no el código:
+                console.log(`🔗 Enlace detectado: ${url}`);
+                code = url; 
                 
-                // Opción A: Intentar obtener código automáticamente
-                code = await this.fetchUrlAndExtractCode(url);
+                // NOTA: Antes intentábamos hacer "fetchUrlAndExtractCode(url)" para sacar el 1234.
+                // Pero el usuario prefiere recibir la URL directa para hacer clic manualmente o enviársela al cliente.
+                // Así que devolvemos la URL tal cual como si fuera el "código".
+            }
 
-                // Opción B: Si falla la extracción automática, o como fallback, mostrar el enlace
-                if (!code) {
-                   console.log('No se pudo extraer código automático, mostrando enlace directo.');
-                   code = `Enlace: ${url}`; 
-                }
+            // 2. Si no hay enlace (o falló), buscar código numérico en el texto (Para Login estándar)
+            if (!code) {
+                code = this.extractCode(text) || this.extractCode(html);
             }
 
             // 2. Si no hay enlace (o falló), buscar código en el texto (Para Login o Fallback)
