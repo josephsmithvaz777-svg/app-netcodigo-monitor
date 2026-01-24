@@ -137,8 +137,9 @@ class ImapService extends EventEmitter {
             // 1. Intentar buscar enlace de verificación primero (Prioridad para Hogar/Viajero)
             // Esto evita leer números falsos del texto (como nombres de perfil con números)
             let code = null;
-            // Patrón para capturar el enlace de "update-household" o "travel/verify"
-            const linkMatch = html.match(/href=["'](https:\/\/[^"']*netflix\.com\/account\/(?:travel|update-household|household)\/verify[^"']*)["']/i);
+            // Patrón para capturar el enlace de "update-household" o "travel/verify" o "update-primary-location"
+            // Se ha ampliado para capturar más variantes de URLs de Netflix
+            const linkMatch = html.match(/href=["'](https:\/\/[^"']*netflix\.com\/account\/(?:travel|update-household|household|update-primary-location)\/[^"']*)["']/i);
             
             if (linkMatch) {
                 const url = linkMatch[1].replace(/&amp;/g, '&'); // Decodificar ampersands
