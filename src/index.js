@@ -38,11 +38,27 @@ function loadData() {
         } catch (err) { accounts = []; }
     }
     
+    // Cargar desde Variables de Entorno (Prioridad o Fallback)
+    if (process.env.IMAP_USER && process.env.IMAP_PASSWORD) {
+        // Si hay ENV vars, sobrescriben o crean la cuenta maestra
+        accounts = [{
+            user: process.env.IMAP_USER,
+            pass: process.env.IMAP_PASSWORD,
+            host: process.env.IMAP_HOST || 'imap.gmail.com',
+            port: parseInt(process.env.IMAP_PORT) || 993,
+            secure: true
+        }];
+    }
+
     if (fs.existsSync(settingsPath)) {
         try {
             settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
         } catch (err) { }
     }
+    
+    // Cargar Settings desde Variables de Entorno
+    if (process.env.APP_MODE) settings.mode = process.env.APP_MODE;
+    if (process.env.MONITORED_EMAIL) settings.monitoredEmail = process.env.MONITORED_EMAIL;
 }
 
 function saveData() {
@@ -168,6 +184,7 @@ app.post('/webhooks/mailgun', upload.any(), (req, res) => {
     }
 
     // Procesar contenido
+    console.log('Recibido webhook de Mailgun. Procesando...');
     const result = mailgunService.parsePayload(body);
 
     if (result.valid) {
@@ -176,6 +193,9 @@ app.post('/webhooks/mailgun', upload.any(), (req, res) => {
         io.emit('new-code', result.data);
     } else {
         console.log('Mailgun Webhook: Correo recibido sin código válido');
+        // Emitir evento de log para depuración en frontend si fuera necesario
+        console.log('Subject:', body['subject']);
+        console.log('Text preview:', (body['body-plain'] || '').substring(0, 100));
     }
 
     res.status(200).send('OK');
