@@ -123,6 +123,8 @@ class ImapService extends EventEmitter {
                 // pero por ahora nos fiamos de que el reenvío automático suele preservar headers o ponerlo en el cuerpo.
             }
 
+            console.log(`📩 Procesando correo de: ${originalAccount} | Asunto: ${subject}`);
+
             const code = this.extractCode(text) || this.extractCode(html);
             
             if (code) {
