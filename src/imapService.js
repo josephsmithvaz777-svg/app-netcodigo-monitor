@@ -125,15 +125,19 @@ class ImapService extends EventEmitter {
 
             console.log(`📩 Procesando correo de: ${originalAccount} | Asunto: ${subject}`);
 
-            let code = this.extractCode(text) || this.extractCode(html);
+            // 1. Intentar buscar enlace de verificación primero (Prioridad para Hogar/Viajero)
+            // Esto evita leer números falsos del texto (como nombres de perfil con números)
+            let code = null;
+            const linkMatch = html.match(/href=["'](https:\/\/[^"']*netflix\.com\/account\/(?:travel|update-household|household)\/verify[^"']*)["']/i);
             
-            // Si no hay código directo, buscar enlace de "Obtener código"
+            if (linkMatch) {
+                const url = linkMatch[1].replace(/&amp;/g, '&'); // Decodificar ampersands
+                code = await this.fetchUrlAndExtractCode(url);
+            }
+
+            // 2. Si no hay enlace (o falló), buscar código en el texto (Para Login o Fallback)
             if (!code) {
-                const linkMatch = html.match(/href=["'](https:\/\/[^"']*netflix\.com\/account\/(?:travel|update-household|household)\/verify[^"']*)["']/i);
-                if (linkMatch) {
-                    const url = linkMatch[1].replace(/&amp;/g, '&'); // Decodificar ampersands
-                    code = await this.fetchUrlAndExtractCode(url);
-                }
+                code = this.extractCode(text) || this.extractCode(html);
             }
 
             if (code) {
