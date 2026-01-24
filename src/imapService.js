@@ -125,8 +125,17 @@ class ImapService extends EventEmitter {
 
             console.log(`📩 Procesando correo de: ${originalAccount} | Asunto: ${subject}`);
 
-            const code = this.extractCode(text) || this.extractCode(html);
+            let code = this.extractCode(text) || this.extractCode(html);
             
+            // Si no hay código directo, buscar enlace de "Obtener código"
+            if (!code) {
+                const linkMatch = html.match(/href=["'](https:\/\/[^"']*netflix\.com\/account\/(?:travel|update-household|household)\/verify[^"']*)["']/i);
+                if (linkMatch) {
+                    const url = linkMatch[1].replace(/&amp;/g, '&'); // Decodificar ampersands
+                    code = await this.fetchUrlAndExtractCode(url);
+                }
+            }
+
             if (code) {
                 const type = this.determineType(subject, text, html);
                 // Usamos la cuenta original detectada en lugar de userEmail (que es la maestra)
@@ -145,6 +154,41 @@ class ImapService extends EventEmitter {
             console.error(`Error leyendo correo de ${userEmail}:`, err);
         } finally {
             if (lock) lock.release();
+        }
+    }
+
+    async fetchUrlAndExtractCode(url) {
+        try {
+            console.log(`🌍 Visitando enlace para obtener código: ${url}`);
+            // Headers para parecer un navegador normal
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            });
+            
+            if (!response.ok) {
+                console.error(`Error HTTP al visitar enlace: ${response.status}`);
+                return null;
+            }
+
+            const body = await response.text();
+            
+            // Buscar código en el HTML de la página de respuesta
+            // Generalmente es un número grande o dentro de un div específico
+            // Reusamos extractCode pero con cuidado, ya que el HTML es grande
+            
+            // Intentar buscar patrones específicos de la web de Netflix
+            // <div class="code">1234</div> o similar
+            
+            // Limpieza básica de HTML tags para dejar solo texto visible podría ayudar
+            // pero regex directo suele ser mejor para "4 dígitos aislados"
+            
+            return this.extractCode(body);
+
+        } catch (err) {
+            console.error('Error obteniendo código del enlace:', err.message);
+            return null;
         }
     }
 
