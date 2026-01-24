@@ -85,10 +85,20 @@ class ImapService extends EventEmitter {
         try {
             lock = await client.getMailboxLock('INBOX');
             
-            // Buscar el último mensaje
-            const message = await client.fetchOne('*', { source: true, envelope: true });
+            // Buscar solo mensajes NO LEÍDOS (UNSEEN) para asegurar que son nuevos
+            // y obtener el UID más alto (el más reciente)
+            const message = await client.fetchOne(
+                { seen: false }, 
+                { source: true, envelope: true, uid: true }
+            );
             
-            if (!message || !message.source) return;
+            if (!message || !message.source) {
+                console.log('No hay mensajes nuevos sin leer.');
+                return;
+            }
+
+            // Marcar como leído inmediatamente para no procesarlo dos veces
+            await client.messageFlagsAdd(message.uid, ['\\Seen']);
 
             const parsed = await simpleParser(message.source);
             const subject = parsed.subject || '';
