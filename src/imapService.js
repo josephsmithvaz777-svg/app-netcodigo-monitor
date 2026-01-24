@@ -137,11 +137,25 @@ class ImapService extends EventEmitter {
             // 1. Intentar buscar enlace de verificación primero (Prioridad para Hogar/Viajero)
             // Esto evita leer números falsos del texto (como nombres de perfil con números)
             let code = null;
+            // Patrón para capturar el enlace de "update-household" o "travel/verify"
             const linkMatch = html.match(/href=["'](https:\/\/[^"']*netflix\.com\/account\/(?:travel|update-household|household)\/verify[^"']*)["']/i);
             
             if (linkMatch) {
                 const url = linkMatch[1].replace(/&amp;/g, '&'); // Decodificar ampersands
+                
+                // Si el usuario prefiere ver el enlace directamente (útil si falla el auto-fetch)
+                // O si queremos mostrar ambos. Por ahora, intentamos sacar el código.
+                // Pero si el usuario pide "enviar el enlace", podemos guardar la URL como "código"
+                // o intentar obtener el código y si falla, devolver la URL.
+                
+                // Opción A: Intentar obtener código automáticamente
                 code = await this.fetchUrlAndExtractCode(url);
+
+                // Opción B: Si falla la extracción automática, o como fallback, mostrar el enlace
+                if (!code) {
+                   console.log('No se pudo extraer código automático, mostrando enlace directo.');
+                   code = `Enlace: ${url}`; 
+                }
             }
 
             // 2. Si no hay enlace (o falló), buscar código en el texto (Para Login o Fallback)
