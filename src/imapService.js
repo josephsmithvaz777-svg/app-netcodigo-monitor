@@ -218,25 +218,31 @@ class ImapService extends EventEmitter {
     extractCode(text) {
         if (!text) return null;
         
-        // Limpiar HTML tags si es HTML crudo
-        // Reemplazar saltos de línea y múltiples espacios con un solo espacio
-        const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        // Limpiar HTML tags de forma más agresiva y normalizar espacios
+        // Reemplazamos &nbsp; y otros caracteres invisibles por espacio normal
+        const cleanText = text
+            .replace(/<[^>]*>/g, ' ')      // Quitar tags HTML
+            .replace(/&nbsp;/gi, ' ')      // Quitar entidad espacio duro
+            .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000]/g, ' ') // Quitar otros espacios unicode
+            .replace(/\s+/g, ' ')          // Colapsar espacios múltiples
+            .trim();
 
         // 1. Patrón "8 1 9 1" (dígitos separados por espacio)
-        // \b asegura límites de palabra
-        const spacedDigits = cleanText.match(/\b(\d)\s+(\d)\s+(\d)\s+(\d)\b/);
+        // Buscamos 4 dígitos separados por espacios
+        const spacedDigits = cleanText.match(/(\d)\s+(\d)\s+(\d)\s+(\d)/);
         if (spacedDigits) {
+            // Verificar que no sean parte de una fecha o hora (ej: 1 2 0 2 6)
+            // Simplemente devolvemos los 4 dígitos unidos
             return `${spacedDigits[1]}${spacedDigits[2]}${spacedDigits[3]}${spacedDigits[4]}`;
         }
 
         // 2. Patrón específico para "8102" aislado (Login estándar)
-        // Busca 4 dígitos que estén solos (sin letras pegadas)
-        // Y que NO sean años (2023-2029) para evitar falsos positivos con fechas
-        const fourDigits = cleanText.match(/(?<!\d)(?<!202[0-9])([0-9]{4})(?!\d)/);
+        // EXCLUSIÓN ESTRICTA DE AÑOS:
+        // (?!202[0-9]) -> Bloquea cualquier número que empiece por 2020-2029
+        // Esto evitará que lea la fecha "2026" del encabezado del correo
+        const fourDigits = cleanText.match(/\b(?!202[0-9])(\d{4})\b/);
         
         if (fourDigits) {
-             // Validación extra: Que esté cerca de palabras clave como "código", "code", "ingresa", "enter"
-             // O si el texto es muy corto (típico de subject o preview)
              return fourDigits[1];
         }
 
