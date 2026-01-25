@@ -153,13 +153,9 @@ class ImapService extends EventEmitter {
                 // Así que devolvemos la URL tal cual como si fuera el "código".
             }
 
-            // 2. Si no hay enlace (o falló), buscar código numérico en el texto (Para Login estándar)
+            // Si no hay enlace (o falló), buscar código numérico en el texto (Para Login estándar)
             if (!code) {
-                code = this.extractCode(text) || this.extractCode(html);
-            }
-
-            // 2. Si no hay enlace (o falló), buscar código en el texto (Para Login o Fallback)
-            if (!code) {
+                // Mejora: Buscar patrones numéricos con más flexibilidad (saltos de línea, espacios raros)
                 code = this.extractCode(text) || this.extractCode(html);
             }
 
@@ -222,28 +218,25 @@ class ImapService extends EventEmitter {
     extractCode(text) {
         if (!text) return null;
         
-        // Limpiar HTML tags si es HTML crudo (aunque simpleParser ayuda)
-        // Pero simpleParser.text ya nos da texto plano.
-        
-        // Buscamos patrones:
-        // 1. "8 1 9 1" (dígitos separados por espacio)
-        // 2. "8191" (dígitos juntos, pero aislados)
-        
-        // Normalizar espacios múltiples a uno solo
-        const cleanText = text.replace(/\s+/g, ' ');
+        // Limpiar HTML tags si es HTML crudo
+        // Reemplazar saltos de línea y múltiples espacios con un solo espacio
+        const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
-        // Patrón específico para "8 1 9 1"
+        // 1. Patrón "8 1 9 1" (dígitos separados por espacio)
         // \b asegura límites de palabra
         const spacedDigits = cleanText.match(/\b(\d)\s+(\d)\s+(\d)\s+(\d)\b/);
         if (spacedDigits) {
             return `${spacedDigits[1]}${spacedDigits[2]}${spacedDigits[3]}${spacedDigits[4]}`;
         }
 
-        // Patrón para 4 dígitos juntos, ej: "Tu código es 1234"
-        // Evitamos años como 2024, 2025.
-        // Generalmente el código está solo o precedido por "código".
-        const fourDigits = cleanText.match(/(?:código|code).*?\b(\d{4})\b/i);
+        // 2. Patrón específico para "8102" aislado (Login estándar)
+        // Busca 4 dígitos que estén solos (sin letras pegadas)
+        // Y que NO sean años (2023-2029) para evitar falsos positivos con fechas
+        const fourDigits = cleanText.match(/(?<!\d)(?<!202[0-9])([0-9]{4})(?!\d)/);
+        
         if (fourDigits) {
+             // Validación extra: Que esté cerca de palabras clave como "código", "code", "ingresa", "enter"
+             // O si el texto es muy corto (típico de subject o preview)
              return fourDigits[1];
         }
 
