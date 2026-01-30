@@ -218,9 +218,14 @@ class ImapService extends EventEmitter {
     extractCode(text) {
         if (!text) return null;
         
+        // Pre-limpieza para evitar que palabras se peguen al quitar tags
+        // Reemplazar cierres de bloque comunes por espacios
+        let processedText = text
+            .replace(/<\/(div|p|h[1-6]|tr|li)>/gi, ' ') 
+            .replace(/<br\s*\/?>/gi, ' ');
+
         // Limpiar HTML tags de forma más agresiva y normalizar espacios
-        // Reemplazamos &nbsp; y otros caracteres invisibles por espacio normal
-        const cleanText = text
+        const cleanText = processedText
             .replace(/<[^>]*>/g, ' ')      // Quitar tags HTML
             .replace(/&nbsp;/gi, ' ')      // Quitar entidad espacio duro
             .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000]/g, ' ') // Quitar otros espacios unicode
@@ -229,9 +234,9 @@ class ImapService extends EventEmitter {
 
         // 1. Prioridad: Buscar "Ingresa este código..." seguido de 4 dígitos
         // El usuario reporta: "el cuerpo del correo siempre sera Ingresa este código para iniciar sesión y luego el codigo 8102"
-        const phraseMatch = cleanText.match(/Ingresa este c[óo]digo.*?(\d{4})/i);
+        // Agregamos tolerancia a dos puntos o guiones: "código: 1234"
+        const phraseMatch = cleanText.match(/Ingresa este c[óo]digo.*?(?:[:\-]|\s)(\d{4})\b/i);
         if (phraseMatch) {
-            // Verificar que no sea un año por seguridad, aunque con la frase es muy seguro que es el código
             if (!phraseMatch[1].match(/^202[0-9]$/)) {
                 return phraseMatch[1];
             }
@@ -241,15 +246,11 @@ class ImapService extends EventEmitter {
         // Buscamos 4 dígitos separados por espacios
         const spacedDigits = cleanText.match(/(\d)\s+(\d)\s+(\d)\s+(\d)/);
         if (spacedDigits) {
-            // Verificar que no sean parte de una fecha o hora (ej: 1 2 0 2 6)
-            // Simplemente devolvemos los 4 dígitos unidos
             return `${spacedDigits[1]}${spacedDigits[2]}${spacedDigits[3]}${spacedDigits[4]}`;
         }
 
-        // 2. Patrón específico para "8102" aislado (Login estándar)
-        // EXCLUSIÓN ESTRICTA DE AÑOS:
-        // (?!202[0-9]) -> Bloquea cualquier número que empiece por 2020-2029
-        // Esto evitará que lea la fecha "2026" del encabezado del correo
+        // 3. Patrón genérico de 4 dígitos (con protecciones extra)
+        // Buscamos 4 dígitos que NO sean un año (2020-2029) y que tengan bordes de palabra
         const fourDigits = cleanText.match(/\b(?!202[0-9])(\d{4})\b/);
         
         if (fourDigits) {
