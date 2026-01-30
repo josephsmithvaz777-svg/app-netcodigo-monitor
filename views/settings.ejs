@@ -95,7 +95,10 @@
                             <label for="secure" class="ml-2 text-sm text-slate-700">Usar SSL/TLS (Seguro)</label>
                         </div>
 
-                        <div class="col-span-1 md:col-span-2 flex justify-end mt-2">
+                        <div class="col-span-1 md:col-span-2 flex justify-end gap-3 mt-2">
+                            <button type="button" onclick="testConnection()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-yellow-200">
+                                🛠️ Probar Conexión
+                            </button>
                             <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-red-200">
                                 Conectar Cuenta
                             </button>
@@ -194,6 +197,49 @@
                     customHostInput.required = false;
                 }
             });
+        }
+
+        async function testConnection() {
+            const form = document.getElementById('add-account-form');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            if (data.host === 'custom') data.host = data.custom_host;
+
+            // Validación básica
+            if (!data.user || !data.pass || !data.host || !data.port) {
+                alert('Por favor completa todos los campos antes de probar.');
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="testConnection()"]');
+            const originalText = btn.innerText;
+            btn.innerText = 'Probando...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/test-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ ¡Conexión Exitosa!\n\nLa cuenta se conectó correctamente.');
+                } else {
+                    let msg = '❌ Error de Conexión:\n' + result.error;
+                    if (result.response && result.response.includes('NO AUTHENTICATE failed')) {
+                        msg += '\n\n💡 PISTA: Para Outlook/Hotmail, asegúrate de usar una "Contraseña de Aplicación" si tienes verificación en dos pasos, o revisa si Microsoft bloquea el acceso básico.';
+                    }
+                    alert(msg);
+                }
+            } catch (err) {
+                alert('Error al intentar probar la conexión: ' + err.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
 
         const addForm = document.getElementById('add-account-form');

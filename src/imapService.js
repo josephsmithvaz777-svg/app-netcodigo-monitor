@@ -85,6 +85,33 @@ class ImapService extends EventEmitter {
         console.log('Todas las conexiones cerradas.');
     }
 
+    // Método estático para probar conexión sin guardarla
+    static async testConnection(account) {
+        const client = new ImapFlow({
+            host: account.host,
+            port: account.port,
+            secure: account.secure,
+            auth: {
+                user: account.user,
+                pass: account.pass
+            },
+            logger: false,
+            emitLogs: false
+        });
+
+        try {
+            await client.connect();
+            await client.logout();
+            return { success: true };
+        } catch (err) {
+            return { 
+                success: false, 
+                error: err.message,
+                response: err.response 
+            };
+        }
+    }
+
     async fetchLatest(client, userEmail) {
         // Necesitamos un lock para operar en el buzón
         let lock;
@@ -241,18 +268,20 @@ class ImapService extends EventEmitter {
         // LOG PARA DEPURACIÓN (Ver qué texto estamos analizando realmente)
         // console.log('Texto limpio para extracción:', cleanText.substring(0, 200) + '...');
 
-        // 1. Prioridad: Buscar "Ingresa este código..." seguido de 4 dígitos
-        // El usuario reporta: "el cuerpo del correo siempre sera Ingresa este código para iniciar sesión y luego el codigo 8102"
-        // Agregamos tolerancia a dos puntos o guiones: "código: 1234"
-        const phraseMatch = cleanText.match(/Ingresa este c[óo]digo.*?(?:[:\-]|\s)(\d{4})\b/i);
-        if (phraseMatch) {
-            if (!phraseMatch[1].match(/^202[0-9]$/)) {
-                return phraseMatch[1];
-            }
+        // 1. Prioridad: Buscar "Ingresa este código..." seguido de 4 dígitos (pegados o separados)
+        // Patrón A: "Ingresa este código... 1234"
+        const phraseMatch = cleanText.match(/Ingresa este c[óo]digo.*?(?:[:\-] |\s)(\d{4})\b/i);
+        if (phraseMatch && !phraseMatch[1].match(/^202[0-9]$/)) {
+            return phraseMatch[1];
         }
 
-        // 2. Patrón "8 1 9 1" (dígitos separados por espacio)
-        // Buscamos 4 dígitos separados por espacios
+        // Patrón B: "Ingresa este código... 1 2 3 4" (dígitos espaciados)
+        const phraseMatchSpaced = cleanText.match(/Ingresa este c[óo]digo.*?(\d)\s+(\d)\s+(\d)\s+(\d)/i);
+        if (phraseMatchSpaced) {
+            return `${phraseMatchSpaced[1]}${phraseMatchSpaced[2]}${phraseMatchSpaced[3]}${phraseMatchSpaced[4]}`;
+        }
+
+        // 2. Patrón genérico de dígitos espaciados "8 1 9 1" en cualquier parte
         const spacedDigits = cleanText.match(/(\d)\s+(\d)\s+(\d)\s+(\d)/);
         if (spacedDigits) {
             return `${spacedDigits[1]}${spacedDigits[2]}${spacedDigits[3]}${spacedDigits[4]}`;

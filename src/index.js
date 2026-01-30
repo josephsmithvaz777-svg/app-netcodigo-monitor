@@ -147,6 +147,23 @@ app.post('/api/accounts', async (req, res) => {
     res.json({ success: true });
 });
 
+app.post('/api/test-connection', async (req, res) => {
+    const { user, pass, host, port, secure } = req.body;
+    if (!user || !pass || !host || !port) return res.status(400).json({ error: 'Faltan datos' });
+
+    const account = { 
+        user, 
+        pass, 
+        host, 
+        port: parseInt(port), 
+        secure: secure === 'on' || secure === true 
+    };
+
+    console.log(`Probando conexión para: ${user}...`);
+    const result = await ImapService.testConnection(account);
+    res.json(result);
+});
+
 app.delete('/api/accounts/:email', async (req, res) => {
     const emailToDelete = req.params.email;
     accounts = accounts.filter(a => a.user !== emailToDelete);
