@@ -107,7 +107,8 @@ class ImapService extends EventEmitter {
             return { 
                 success: false, 
                 error: err.message,
-                response: err.response 
+                response: err.response,
+                code: err.code 
             };
         }
     }

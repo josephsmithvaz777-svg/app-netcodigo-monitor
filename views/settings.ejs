@@ -228,11 +228,42 @@
                 if (result.success) {
                     alert('✅ ¡Conexión Exitosa!\n\nLa cuenta se conectó correctamente.');
                 } else {
-                    let msg = '❌ Error de Conexión:\n' + result.error;
-                    if (result.response && result.response.includes('NO AUTHENTICATE failed')) {
-                        msg += '\n\n💡 PISTA: Para Outlook/Hotmail, asegúrate de usar una "Contraseña de Aplicación" si tienes verificación en dos pasos, o revisa si Microsoft bloquea el acceso básico.';
+                    let msg = '❌ Error de Conexión:\n' + (result.error || 'Desconocido');
+                    if (result.code) msg += `\nCódigo: ${result.code}`;
+                    if (result.response) msg += `\nRespuesta: ${result.response}`;
+                    
+                    // Pista común de Outlook
+                    if ((result.response && result.response.includes('NO AUTHENTICATE failed')) || (result.code && result.code.toString().includes('AUTH'))) {
+                        msg += '\n\n💡 PISTA: Para Outlook/Hotmail, usa una "Contraseña de Aplicación" con 2FA activo.';
                     }
-                    alert(msg);
+                    
+                    // Reintento automático con host alterno
+                    const shouldRetryWithLegacy = (data.host === 'outlook.office365.com');
+                    if (shouldRetryWithLegacy) {
+                        msg += '\n\n↻ Probando automáticamente con host alterno: imap-mail.outlook.com...';
+                        alert(msg);
+                        
+                        // Reintento
+                        const altData = { ...data, host: 'imap-mail.outlook.com' };
+                        const response2 = await fetch('/api/test-connection', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(altData)
+                        });
+                        const result2 = await response2.json();
+                        
+                        if (result2.success) {
+                            alert('✅ Conexión Exitosa con host alterno: imap-mail.outlook.com\n\nPulsa "Conectar Cuenta" para guardar.');
+                        } else {
+                            let msg2 = '❌ También falló con el host alterno.\n' + (result2.error || 'Desconocido');
+                            if (result2.code) msg2 += `\nCódigo: ${result2.code}`;
+                            if (result2.response) msg2 += `\nRespuesta: ${result2.response}`;
+                            msg2 += '\n\nVerifica que la contraseña sea de aplicación y que 2FA esté activo.';
+                            alert(msg2);
+                        }
+                    } else {
+                        alert(msg);
+                    }
                 }
             } catch (err) {
                 alert('Error al intentar probar la conexión: ' + err.message);
