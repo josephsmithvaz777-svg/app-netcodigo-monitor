@@ -51,6 +51,12 @@ class ImapService extends EventEmitter {
                     await this.fetchLatest(client, account.user);
                 }
             });
+
+            // IMPORTANTE: Revisar el último correo inmediatamente al conectar
+            // Esto recupera correos que llegaron mientras la app estaba apagada o reiniciando
+            console.log(`Revisando buzón al conectar para ${account.user}...`);
+            await this.fetchLatest(client, account.user);
+
         } finally {
             lock.release();
         }
@@ -231,6 +237,9 @@ class ImapService extends EventEmitter {
             .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000]/g, ' ') // Quitar otros espacios unicode
             .replace(/\s+/g, ' ')          // Colapsar espacios múltiples
             .trim();
+        
+        // LOG PARA DEPURACIÓN (Ver qué texto estamos analizando realmente)
+        // console.log('Texto limpio para extracción:', cleanText.substring(0, 200) + '...');
 
         // 1. Prioridad: Buscar "Ingresa este código..." seguido de 4 dígitos
         // El usuario reporta: "el cuerpo del correo siempre sera Ingresa este código para iniciar sesión y luego el codigo 8102"
