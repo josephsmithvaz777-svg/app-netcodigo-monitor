@@ -124,14 +124,22 @@ app.post('/api/accounts', async (req, res) => {
     const { user, pass, host, port, secure } = req.body;
     if (!user || !pass || !host || !port) return res.status(400).json({ error: 'Faltan datos' });
     
-    // En modo single account, reemplazamos si existe
-    accounts = [{
+    // Verificar si la cuenta ya existe para actualizarla o agregarla
+    const existingIndex = accounts.findIndex(a => a.user === user);
+    
+    const newAccount = {
         user,
         pass,
         host,
         port: parseInt(port),
         secure: secure === 'on' || secure === true
-    }];
+    };
+
+    if (existingIndex >= 0) {
+        accounts[existingIndex] = newAccount; // Actualizar
+    } else {
+        accounts.push(newAccount); // Agregar nueva
+    }
     
     settings.mode = 'imap'; // Forzar modo IMAP al agregar cuenta
     saveData();
@@ -140,7 +148,8 @@ app.post('/api/accounts', async (req, res) => {
 });
 
 app.delete('/api/accounts/:email', async (req, res) => {
-    accounts = [];
+    const emailToDelete = req.params.email;
+    accounts = accounts.filter(a => a.user !== emailToDelete);
     saveData();
     await restartServices();
     res.json({ success: true });

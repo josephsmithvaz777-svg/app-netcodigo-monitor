@@ -227,7 +227,17 @@ class ImapService extends EventEmitter {
             .replace(/\s+/g, ' ')          // Colapsar espacios múltiples
             .trim();
 
-        // 1. Patrón "8 1 9 1" (dígitos separados por espacio)
+        // 1. Prioridad: Buscar "Ingresa este código..." seguido de 4 dígitos
+        // El usuario reporta: "el cuerpo del correo siempre sera Ingresa este código para iniciar sesión y luego el codigo 8102"
+        const phraseMatch = cleanText.match(/Ingresa este c[óo]digo.*?(\d{4})/i);
+        if (phraseMatch) {
+            // Verificar que no sea un año por seguridad, aunque con la frase es muy seguro que es el código
+            if (!phraseMatch[1].match(/^202[0-9]$/)) {
+                return phraseMatch[1];
+            }
+        }
+
+        // 2. Patrón "8 1 9 1" (dígitos separados por espacio)
         // Buscamos 4 dígitos separados por espacios
         const spacedDigits = cleanText.match(/(\d)\s+(\d)\s+(\d)\s+(\d)/);
         if (spacedDigits) {

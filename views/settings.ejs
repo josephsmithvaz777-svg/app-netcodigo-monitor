@@ -36,38 +36,50 @@
 
             <!-- Contenido Modo IMAP -->
             <div id="imap-section" class="<%= settings.mode === 'imap' ? '' : 'hidden' %>">
+                
+                <!-- Lista de Cuentas Conectadas -->
                 <% if (accounts.length > 0) { %>
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-bold text-blue-700">Cuenta Activa (IMAP):</p>
-                                <p class="text-blue-900 font-mono text-lg"><%= accounts[0].user %></p>
-                                <p class="text-sm text-blue-600 mt-1">Servidor: <%= accounts[0].host %></p>
-                            </div>
-                            <button onclick="deleteAccount('<%= accounts[0].user %>')" class="bg-white text-red-500 hover:text-red-700 border border-red-200 hover:border-red-300 px-3 py-1 rounded text-sm font-medium transition-colors shadow-sm">
-                                Desconectar
-                            </button>
+                    <div class="mb-8">
+                        <h3 class="font-bold text-slate-700 mb-3">Cuentas Conectadas (<%= accounts.length %>)</h3>
+                        <div class="space-y-3">
+                            <% accounts.forEach(function(account) { %>
+                                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 flex justify-between items-center shadow-sm rounded-r-lg">
+                                    <div>
+                                        <p class="font-bold text-blue-900 font-mono"><%= account.user %></p>
+                                        <p class="text-xs text-blue-600"><%= account.host %></p>
+                                    </div>
+                                    <button onclick="deleteAccount('<%= account.user %>')" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors" title="Eliminar cuenta">
+                                        🗑️
+                                    </button>
+                                </div>
+                            <% }); %>
                         </div>
                     </div>
-                <% } else { %>
+                <% } %>
+
+                <!-- Formulario para Agregar Cuenta -->
+                <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <span>➕</span> Agregar Nueva Cuenta
+                    </h3>
                     <form id="add-account-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="col-span-1 md:col-span-2">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Correo Electrónico Maestro</label>
-                            <input type="email" name="user" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" placeholder="central@tuempresa.com">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Correo Electrónico</label>
+                            <input type="email" name="user" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" placeholder="cuenta1@netflix.com">
                         </div>
                         
                         <div class="col-span-1 md:col-span-2">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña de Aplicación</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
                             <input type="password" name="pass" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" placeholder="••••••••••••••••">
-                            <p class="text-xs text-slate-400 mt-1">Usa una "Contraseña de Aplicación", no tu contraseña habitual.</p>
+                            <p class="text-xs text-slate-400 mt-1">Si tienes verificación en 2 pasos, usa una Contraseña de Aplicación.</p>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Host IMAP</label>
                             <select name="host" id="host-select" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white">
-                                <option value="imap.gmail.com">Gmail (imap.gmail.com)</option>
                                 <option value="outlook.office365.com">Outlook/Office365 (Recomendado)</option>
                                 <option value="imap-mail.outlook.com">Outlook/Hotmail (Legacy)</option>
+                                <option value="imap.gmail.com">Gmail</option>
                                 <option value="custom">Otro...</option>
                             </select>
                             <input type="text" name="custom_host" id="custom-host" class="w-full px-3 py-2 border border-slate-300 rounded-lg mt-2 hidden" placeholder="imap.ejemplo.com">
@@ -85,11 +97,11 @@
 
                         <div class="col-span-1 md:col-span-2 flex justify-end mt-2">
                             <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-red-200">
-                                Conectar IMAP
+                                Conectar Cuenta
                             </button>
                         </div>
                     </form>
-                <% } %>
+                </div>
             </div>
 
             <!-- Contenido Modo Mailgun -->
@@ -208,7 +220,7 @@
         }
 
         async function deleteAccount(email) {
-            if (!confirm('¿Desconectar la cuenta?')) return;
+            if (!confirm('¿Seguro que quieres eliminar la cuenta ' + email + '?')) return;
             try {
                 const response = await fetch('/api/accounts/' + encodeURIComponent(email), { method: 'DELETE' });
                 if (response.ok) window.location.reload();
