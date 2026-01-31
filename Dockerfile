@@ -19,10 +19,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el código de la aplicación
 COPY . .
 
-# Crear archivos de configuración si no existen
-RUN if [ ! -f accounts.json ]; then echo '{"accounts": []}' > accounts.json; fi && \
-    if [ ! -f settings.json ]; then echo '{"check_interval": 300, "days_back": 7, "auto_mark_read": false, "notification_enabled": true}' > settings.json; fi
-
 # Exponer puerto
 EXPOSE 5000
 
