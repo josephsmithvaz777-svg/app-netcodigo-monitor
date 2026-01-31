@@ -30,7 +30,7 @@ Thumbs.db
 node_modules/
 
 # Configuración local (sensible)
-accounts.json
+# accounts.json  # Comentado para permitir deployment con credenciales
 .env
 
 # Git
