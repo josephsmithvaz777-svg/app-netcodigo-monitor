@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (si existe)
+node_modules/
+
+# Configuración local (sensible)
+accounts.json
+.env
+
+# Git
+.git/
+.gitignore
+
+# Documentación local
+*.md
+!README.md
+
+# Archivos de ejemplo
+*.example

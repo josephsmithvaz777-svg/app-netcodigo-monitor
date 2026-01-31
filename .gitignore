@@ -1,4 +1,10 @@
-node_modules
+accounts.json
+settings.json
+*.pyc
+__pycache__/
 .env
-src/accounts.json
-src/settings.json
+venv/
+env/
+*.log
+.DS_Store
+node_modules/
