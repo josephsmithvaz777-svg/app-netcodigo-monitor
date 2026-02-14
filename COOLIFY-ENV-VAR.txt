@@ -9,10 +9,11 @@
 ## Instrucciones:
 
 1. Ve a Coolify → Tu proyecto → Environment Variables
-2. Busca la variable: `OUTLOOK_ACCOUNTS`
-3. Reemplaza el valor con la línea de arriba
-4. Guarda los cambios
-5. Haz Rebuild
+2. Haz clic en "+ Add"
+3. **Nombre**: `EMAIL_ACCOUNTS`
+4. **Valor**: Pega la línea de arriba
+5. Guarda los cambios
+6. Haz Rebuild
 
 ---
 
@@ -24,3 +25,9 @@ INFO - Cuentas cargadas desde variable de entorno: 1
 ```
 
 Si ves "1", ¡está funcionando correctamente! ✅
+
+---
+
+## 📝 Nota:
+
+El código también acepta `OUTLOOK_ACCOUNTS` por compatibilidad, pero se recomienda usar `EMAIL_ACCOUNTS` ya que ahora soporta múltiples proveedores (Gmail, Outlook, etc.).

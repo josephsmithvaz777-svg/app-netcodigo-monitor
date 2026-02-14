@@ -18,7 +18,7 @@
 
 ### 1️⃣ Actualizar Variables de Entorno
 
-Ve a tu proyecto en Coolify y **actualiza** la variable `OUTLOOK_ACCOUNTS` con solo la cuenta de Gmail:
+Ve a tu proyecto en Coolify y **agrega** la variable `EMAIL_ACCOUNTS`:
 
 #### ⚠️ FORMATO CORRECTO (TODO EN UNA LÍNEA):
 
@@ -37,6 +37,8 @@ Ve a tu proyecto en Coolify y **actualiza** la variable `OUTLOOK_ACCOUNTS` con s
   }
 ]
 ```
+
+**Nota**: El código también acepta `OUTLOOK_ACCOUNTS` por compatibilidad, pero se recomienda usar `EMAIL_ACCOUNTS`.
 
 ### 2️⃣ Verificar Otras Variables de Entorno
 
@@ -139,7 +141,7 @@ INFO - Configuración: {'check_interval': 300, 'days_back': 7, ...}
 ## ✅ Checklist de Deployment
 
 - [x] Código actualizado en GitHub ✅ (commit `5cb24cb`)
-- [ ] Variable `OUTLOOK_ACCOUNTS` actualizada en Coolify con Gmail
+- [ ] Variable `EMAIL_ACCOUNTS` agregada en Coolify con Gmail
 - [ ] Rebuild ejecutado en Coolify
 - [ ] Logs muestran "1 cuenta configurada"
 - [ ] Aplicación accesible en la URL de Coolify
