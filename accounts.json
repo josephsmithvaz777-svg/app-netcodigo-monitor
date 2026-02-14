@@ -1,12 +1,9 @@
 {
     "accounts": [
         {
-            "email": "digitalstoretrujillo05@outlook.com",
-            "password": "eltonwgkpmivjppp"
-        },
-        {
-            "email": "digitalstoretrujillo03@outlook.com",
-            "password": "vhwatkcdzlmknhzi"
+            "email": "netflixaccglobal@gmail.com",
+            "password": "tiziijuofbuzmqop",
+            "provider": "gmail"
         }
     ]
 }

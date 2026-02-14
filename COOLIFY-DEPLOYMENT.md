@@ -18,28 +18,18 @@
 
 ### 1️⃣ Actualizar Variables de Entorno
 
-Ve a tu proyecto en Coolify y **actualiza** la variable `OUTLOOK_ACCOUNTS` para incluir las 3 cuentas:
+Ve a tu proyecto en Coolify y **actualiza** la variable `OUTLOOK_ACCOUNTS` con solo la cuenta de Gmail:
 
 #### ⚠️ FORMATO CORRECTO (TODO EN UNA LÍNEA):
 
 ```json
-[{"email":"digitalstoretrujillo05@outlook.com","password":"jqpbwmiapmkrynhm","provider":"outlook"},{"email":"digitalstoretrujillo03@outlook.com","password":"nbddjiyvidcsmrdp","provider":"outlook"},{"email":"netflixaccglobal@gmail.com","password":"tiziijuofbuzmqop","provider":"gmail"}]
+[{"email":"netflixaccglobal@gmail.com","password":"tiziijuofbuzmqop","provider":"gmail"}]
 ```
 
 #### 📝 Desglosado para entender (NO uses esto, usa la línea de arriba):
 
 ```json
 [
-  {
-    "email": "digitalstoretrujillo05@outlook.com",
-    "password": "jqpbwmiapmkrynhm",
-    "provider": "outlook"
-  },
-  {
-    "email": "digitalstoretrujillo03@outlook.com",
-    "password": "nbddjiyvidcsmrdp",
-    "provider": "outlook"
-  },
   {
     "email": "netflixaccglobal@gmail.com",
     "password": "tiziijuofbuzmqop",
@@ -71,13 +61,13 @@ PORT=5000
 
 ```
 INFO - Iniciando servidor Flask...
-INFO - Cuentas cargadas desde variable de entorno: 3
-INFO - Cuentas configuradas: 3
+INFO - Cuentas cargadas desde variable de entorno: 1
+INFO - Cuentas configuradas: 1
 INFO - Configuración: {'check_interval': 300, 'days_back': 7, ...}
 * Running on http://0.0.0.0:5000
 ```
 
-**Verifica que diga "3 cuentas"** (las 2 de Outlook + 1 de Gmail)
+**Verifica que diga "1 cuenta"** (solo Gmail)
 
 ---
 
@@ -100,9 +90,7 @@ INFO - Configuración: {'check_interval': 300, 'days_back': 7, ...}
                      ▼
 ┌─────────────────────────────────────────────────────┐
 │  Tu App en Coolify monitorea vía IMAP:              │
-│  • digitalstoretrujillo05@outlook.com               │
-│  • digitalstoretrujillo03@outlook.com               │
-│  • netflixaccglobal@gmail.com ← NUEVO               │
+│  • netflixaccglobal@gmail.com                       │
 └────────────────────┬────────────────────────────────┘
                      │
                      ▼
@@ -122,11 +110,7 @@ INFO - Configuración: {'check_interval': 300, 'days_back': 7, ...}
 - ✅ Las contraseñas están solo en variables de entorno de Coolify
 - ✅ La contraseña de Gmail es una "contraseña de aplicación" (no la principal)
 
-### 🔑 Contraseñas Usadas:
-
-**Outlook** (contraseñas de aplicación de Microsoft):
-- `digitalstoretrujillo05@outlook.com`: `jqpbwmiapmkrynhm`
-- `digitalstoretrujillo03@outlook.com`: `nbddjiyvidcsmrdp`
+### 🔑 Contraseña Usada:
 
 **Gmail** (contraseña de aplicación de Google):
 - `netflixaccglobal@gmail.com`: `tiziijuofbuzmqop`
@@ -155,12 +139,12 @@ INFO - Configuración: {'check_interval': 300, 'days_back': 7, ...}
 ## ✅ Checklist de Deployment
 
 - [x] Código actualizado en GitHub ✅ (commit `5cb24cb`)
-- [ ] Variable `OUTLOOK_ACCOUNTS` actualizada en Coolify con 3 cuentas
+- [ ] Variable `OUTLOOK_ACCOUNTS` actualizada en Coolify con Gmail
 - [ ] Rebuild ejecutado en Coolify
-- [ ] Logs muestran "3 cuentas configuradas"
+- [ ] Logs muestran "1 cuenta configurada"
 - [ ] Aplicación accesible en la URL de Coolify
 - [ ] Prueba de verificación manual funciona
-- [ ] Correos de las 3 cuentas se muestran correctamente
+- [ ] Correos de Gmail se muestran correctamente
 
 ---
 
@@ -168,8 +152,8 @@ INFO - Configuración: {'check_interval': 300, 'days_back': 7, ...}
 
 Después del deployment, tu aplicación en Coolify:
 
-1. ✅ Monitoreará **3 cuentas** (2 Outlook + 1 Gmail)
-2. ✅ Detectará correos de Netflix de **todas las cuentas**
+1. ✅ Monitoreará **1 cuenta** (Gmail)
+2. ✅ Detectará correos de Netflix de **netflixaccglobal@gmail.com**
 3. ✅ Mostrará códigos que lleguen a `@digitalstoretrujillo.store`
 4. ✅ Actualizará automáticamente cada 5 minutos
 5. ✅ Permitirá verificación manual instantánea

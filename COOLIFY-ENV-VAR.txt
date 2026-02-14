@@ -2,7 +2,7 @@
 
 ## Copia esta línea EXACTAMENTE como está:
 
-[{"email":"digitalstoretrujillo05@outlook.com","password":"jqpbwmiapmkrynhm","provider":"outlook"},{"email":"digitalstoretrujillo03@outlook.com","password":"nbddjiyvidcsmrdp","provider":"outlook"},{"email":"netflixaccglobal@gmail.com","password":"tiziijuofbuzmqop","provider":"gmail"}]
+[{"email":"netflixaccglobal@gmail.com","password":"tiziijuofbuzmqop","provider":"gmail"}]
 
 ---
 
@@ -20,7 +20,7 @@
 
 Después del rebuild, en los logs deberías ver:
 ```
-INFO - Cuentas cargadas desde variable de entorno: 3
+INFO - Cuentas cargadas desde variable de entorno: 1
 ```
 
-Si ves "3", ¡está funcionando correctamente! ✅
+Si ves "1", ¡está funcionando correctamente! ✅
