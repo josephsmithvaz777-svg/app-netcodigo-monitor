@@ -1,0 +1,26 @@
+# 📋 VARIABLE DE ENTORNO PARA COOLIFY
+
+## Copia esta línea EXACTAMENTE como está:
+
+[{"email":"digitalstoretrujillo05@outlook.com","password":"jqpbwmiapmkrynhm","provider":"outlook"},{"email":"digitalstoretrujillo03@outlook.com","password":"nbddjiyvidcsmrdp","provider":"outlook"},{"email":"netflixaccglobal@gmail.com","password":"tiziijuofbuzmqop","provider":"gmail"}]
+
+---
+
+## Instrucciones:
+
+1. Ve a Coolify → Tu proyecto → Environment Variables
+2. Busca la variable: `OUTLOOK_ACCOUNTS`
+3. Reemplaza el valor con la línea de arriba
+4. Guarda los cambios
+5. Haz Rebuild
+
+---
+
+## Verificación:
+
+Después del rebuild, en los logs deberías ver:
+```
+INFO - Cuentas cargadas desde variable de entorno: 3
+```
+
+Si ves "3", ¡está funcionando correctamente! ✅
