@@ -1,117 +1,131 @@
-# 🚀 Guía de Inicio Rápido
+# ✅ PASOS RÁPIDOS - Configuración Gmail para Netflix Monitor
 
-## ✅ Dependencias ya instaladas
+## 🎯 Resumen
+Tu configuración actual:
+- ✅ Cloudflare Email Routing configurado
+- ✅ `digitalacc06@digitalstoretrujillo.store` → `netflixaccglobal@gmail.com`
+- ✅ `digitalacc08@digitalstoretrujillo.store` → `netflixaccglobal@gmail.com`
+- ✅ Código actualizado para soportar Gmail
+- ⏳ **FALTA**: Configurar contraseña de aplicación de Gmail
 
-Las dependencias de Python ya están instaladas correctamente.
+---
 
-## 📝 SIGUIENTE PASO: Configurar tus cuentas de Outlook
+## 📋 Checklist de Configuración
 
-### Opción 1: Editar directamente el archivo
+### Paso 1: Generar Contraseña de Aplicación de Gmail ⏱️ 2 minutos
 
-Abre `accounts.json` y añade tus cuentas:
+1. **Abre**: https://myaccount.google.com/apppasswords
+   
+2. **Si no puedes acceder**, primero activa la verificación en dos pasos:
+   - Ve a: https://myaccount.google.com/security
+   - Busca "Verificación en dos pasos" y actívala
+   - Luego vuelve a: https://myaccount.google.com/apppasswords
+
+3. **Genera la contraseña**:
+   - Selecciona app: "Correo" o "Otra (nombre personalizado)" → escribe: `Netflix Monitor`
+   - Selecciona dispositivo: "Otro" → escribe: `Python IMAP`
+   - Clic en "Generar"
+
+4. **Copia la contraseña** (16 caracteres, sin espacios)
+   - Ejemplo: `abcd efgh ijkl mnop` → copiar como: `abcdefghijklmnop`
+
+### Paso 2: Habilitar IMAP en Gmail ⏱️ 1 minuto
+
+1. **Abre Gmail**: https://mail.google.com
+2. **Configuración** (⚙️) → "Ver toda la configuración"
+3. **Pestaña**: "Reenvío y correo POP/IMAP"
+4. **Habilitar IMAP** → "Guardar cambios"
+
+### Paso 3: Actualizar accounts.json ⏱️ 30 segundos
+
+Abre `accounts.json` y reemplaza `TU_CONTRASEÑA_DE_APLICACION_GMAIL_AQUI` con la contraseña generada:
 
 ```json
 {
-  "accounts": [
-    {
-      "email": "cuenta1@outlook.com",
-      "password": "CONTRASEÑA-DE-APLICACION-AQUI"
-    },
-    {
-      "email": "cuenta2@outlook.com",
-      "password": "CONTRASEÑA-DE-APLICACION-AQUI"
-    }
-  ]
+    "accounts": [
+        {
+            "email": "digitalstoretrujillo05@outlook.com",
+            "password": "jqpbwmiapmkrynhm",
+            "provider": "outlook"
+        },
+        {
+            "email": "digitalstoretrujillo03@outlook.com",
+            "password": "nbddjiyvidcsmrdp",
+            "provider": "outlook"
+        },
+        {
+            "email": "netflixaccglobal@gmail.com",
+            "password": "PEGA_AQUI_LA_CONTRASEÑA_DE_16_CARACTERES",
+            "provider": "gmail"
+        }
+    ]
 }
 ```
 
-### ⚠️ MUY IMPORTANTE: Necesitas una Contraseña de Aplicación
+### Paso 4: Probar la Conexión ⏱️ 1 minuto
 
-Para que IMAP funcione con Outlook, **NO uses tu contraseña normal de Outlook**. Necesitas generar una **Contraseña de Aplicación**:
+```bash
+python test_gmail.py
+```
 
-#### Pasos para crear una Contraseña de Aplicación en Microsoft:
+Ingresa cuando te pida:
+- Email: `netflixaccglobal@gmail.com`
+- Contraseña: `la contraseña de 16 caracteres que generaste`
 
-1. **Ve a tu cuenta de Microsoft**: https://account.microsoft.com/security
+**Resultado esperado**:
+```
+✅ ¡Conexión exitosa!
+🔍 Buscando correos de Netflix...
+📊 Total de correos de Netflix encontrados: X
+```
 
-2. **Activa la verificación en dos pasos** (si no está activa):
-   - Haz clic en "Opciones de seguridad avanzadas"
-   - Activa "Verificación en dos pasos"
-
-3. **Genera una contraseña de aplicación**:
-   - En la misma página, busca "Contraseñas de aplicación"
-   - Haz clic en "Crear una nueva contraseña de aplicación"
-   - Se generará un código como: `abcd efgh ijkl mnop`
-   - **COPIA ESTE CÓDIGO** (no incluyas los espacios)
-
-4. **Usa este código en `accounts.json`**:
-   ```json
-   {
-     "email": "tucuenta@outlook.com",
-     "password": "abcdefghijklmnop"
-   }
-   ```
-
-### Verificar que IMAP esté habilitado
-
-1. Ve a https://outlook.live.com/mail/
-2. Haz clic en el ícono de configuración (⚙️)
-3. Ve a "Ver toda la configuración de Outlook"
-4. Selecciona "Correo" > "Sincronizar correo"
-5. Asegúrate que **"Permitir que los dispositivos y aplicaciones usen POP"** o **IMAP** esté habilitado
-
-## 🎯 Ejecutar la aplicación
-
-Una vez que hayas configurado `accounts.json` con tus credenciales:
+### Paso 5: Ejecutar la Aplicación ⏱️ 30 segundos
 
 ```bash
 python app.py
 ```
 
-Luego abre tu navegador en: **http://localhost:5000**
-
-## 🔍 ¿Qué tan rápido es IMAP?
-
-**Respuesta corta:** Muy rápido - 2 a 5 segundos por cuenta.
-
-- ✅ **Verificación manual**: Instantánea (haz clic en "Verificar Ahora")
-- ✅ **Verificación automática**: Configurable (recomendado: cada 60-300 segundos)
-- ✅ **Múltiples cuentas**: Se procesan en paralelo
-
-### Recomendaciones de frecuencia:
-
-- **60 segundos (1 minuto)**: Para monitoreo muy frecuente (cuidado con límites de Microsoft)
-- **180 segundos (3 minutos)**: Equilibrio ideal entre velocidad y seguridad
-- **300 segundos (5 minutos)**: Muy seguro, sin riesgo de bloqueos
-
-Microsoft permite ~100 conexiones IMAP por hora por cuenta, así que con 300 segundos (5 minutos) estás muy seguro.
-
-## 🎨 Características de la Interfaz
-
-- **Dashboard en tiempo real** con actualizaciones vía WebSocket
-- **Estadísticas visuales**: Total de correos, códigos de inicio, temporales, actualizaciones
-- **Filtros inteligentes**: Por tipo de correo y por cuenta
-- **Copia rápida**: Haz clic para copiar códigos al portapapeles
-- **Tema oscuro estilo Netflix**: Moderno y profesional
-- **Notificaciones**: Sonido y notificaciones del navegador para nuevos correos
-
-## 🔧 Solución rápida de problemas
-
-### Error: "Authentication failed"
-- Verifica que estés usando la **contraseña de aplicación**, NO tu contraseña normal de Outlook
-- Asegúrate que la verificación en dos pasos esté activa
-
-### Error: "No module named 'flask'"
-- Ejecuta de nuevo: `pip install -r requirements.txt`
-
-### No se encuentran correos
-- Verifica que los correos sean de `@netflix.com`
-- Asegúrate que estén en la bandeja de entrada (INBOX)
-- Aumenta `days_back` en `settings.json` si los correos son antiguos
-
-## 📧 Contacto
-
-Si tienes problemas, revisa el archivo `README.md` para más detalles.
+Abre en el navegador: http://localhost:5000
 
 ---
 
-**¡Listo para empezar! 🎉**
+## 🎉 ¡Listo!
+
+Una vez completados estos pasos, la aplicación monitoreará:
+- ✅ `digitalstoretrujillo05@outlook.com`
+- ✅ `digitalstoretrujillo03@outlook.com`
+- ✅ `netflixaccglobal@gmail.com` (que recibe correos de Cloudflare)
+
+Los correos de Netflix que lleguen a:
+- `digitalacc06@digitalstoretrujillo.store`
+- `digitalacc08@digitalstoretrujillo.store`
+
+Serán reenviados por Cloudflare a `netflixaccglobal@gmail.com` y la aplicación los detectará automáticamente.
+
+---
+
+## ❓ Problemas Comunes
+
+### "No puedo acceder a contraseñas de aplicación"
+→ Activa primero la verificación en dos pasos en: https://myaccount.google.com/security
+
+### "Authentication failed" al probar
+→ Verifica que copiaste la contraseña sin espacios (16 caracteres seguidos)
+
+### "IMAP access is disabled"
+→ Habilita IMAP en Gmail (Paso 2)
+
+### No se encuentran correos de Netflix
+→ Normal si no has recibido correos de Netflix recientemente. Envía un correo de prueba a `digitalacc06@digitalstoretrujillo.store` y verifica que llegue a Gmail.
+
+---
+
+## 📚 Documentación Completa
+
+- `CONFIGURACION-GMAIL.md` - Guía detallada de Gmail
+- `CAMBIOS-MULTI-PROVEEDOR.md` - Resumen técnico de cambios
+- `README.md` - Documentación general
+
+---
+
+**Tiempo total estimado**: ⏱️ 5 minutos

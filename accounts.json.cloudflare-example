@@ -1,0 +1,33 @@
+{
+    "accounts": [
+        {
+            "email": "digitalstoretrujillo05@outlook.com",
+            "password": "jqpbwmiapmkrynhm",
+            "provider": "outlook"
+        },
+        {
+            "email": "digitalstoretrujillo03@outlook.com",
+            "password": "nbddjiyvidcsmrdp",
+            "provider": "outlook"
+        },
+        {
+            "comment": "OPCIÓN 1: Si Cloudflare reenvía a Gmail",
+            "email": "digitalacc06@digitalstoretrujillo.store",
+            "password": "TU_CONTRASEÑA_DE_APLICACION_GMAIL",
+            "provider": "gmail"
+        },
+        {
+            "comment": "OPCIÓN 2: Si Cloudflare reenvía a Outlook",
+            "email": "digitalacc08@digitalstoretrujillo.store",
+            "password": "TU_CONTRASEÑA_DE_APLICACION_OUTLOOK",
+            "provider": "outlook"
+        }
+    ],
+    
+    "_instrucciones": {
+        "cloudflare_email_routing": "Cloudflare Email Routing reenvía correos a otra cuenta (Gmail/Outlook). Usa el proveedor de la cuenta destino.",
+        "gmail": "Genera una contraseña de aplicación en: https://myaccount.google.com/apppasswords",
+        "outlook": "Genera una contraseña de aplicación en: https://account.microsoft.com/security",
+        "custom_imap": "Si usas otro proveedor IMAP, agrega: 'imap_server' y 'imap_port'"
+    }
+}

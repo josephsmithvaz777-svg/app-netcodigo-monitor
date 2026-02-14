@@ -8,11 +8,24 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class OutlookIMAPService:
-    """Servicio para conectar y leer correos de Outlook vía IMAP"""
+class IMAPService:
+    """Servicio para conectar y leer correos vía IMAP (multi-proveedor)"""
     
-    OUTLOOK_IMAP_SERVER = "outlook.office365.com"
-    OUTLOOK_IMAP_PORT = 993
+    # Configuraciones de servidores IMAP por proveedor
+    IMAP_SERVERS = {
+        'outlook': {
+            'server': 'outlook.office365.com',
+            'port': 993
+        },
+        'gmail': {
+            'server': 'imap.gmail.com',
+            'port': 993
+        },
+        'custom': {
+            'server': None,  # Se debe especificar
+            'port': 993
+        }
+    }
     
     # Patrones para identificar correos de Netflix
     NETFLIX_PATTERNS = {
@@ -36,27 +49,44 @@ class OutlookIMAPService:
         ]
     }
     
-    def __init__(self, email_address: str, password: str):
+    def __init__(self, email_address: str, password: str, provider: str = 'outlook', 
+                 custom_server: str = None, custom_port: int = 993):
         """
-        Inicializa el servicio IMAP para Outlook
+        Inicializa el servicio IMAP
         
         Args:
-            email_address: Dirección de correo de Outlook
+            email_address: Dirección de correo
             password: Contraseña o contraseña de aplicación
+            provider: Proveedor IMAP ('outlook', 'gmail', 'custom')
+            custom_server: Servidor IMAP personalizado (solo si provider='custom')
+            custom_port: Puerto IMAP personalizado (solo si provider='custom')
         """
         self.email_address = email_address
         self.password = password
+        self.provider = provider.lower()
         self.mail = None
         
+        # Determinar servidor y puerto
+        if self.provider in self.IMAP_SERVERS:
+            config = self.IMAP_SERVERS[self.provider]
+            self.imap_server = custom_server if self.provider == 'custom' and custom_server else config['server']
+            self.imap_port = custom_port if self.provider == 'custom' else config['port']
+        else:
+            # Fallback a Outlook si el proveedor no es reconocido
+            logger.warning(f"Proveedor '{provider}' no reconocido, usando Outlook por defecto")
+            self.imap_server = self.IMAP_SERVERS['outlook']['server']
+            self.imap_port = self.IMAP_SERVERS['outlook']['port']
+        
     def connect(self):
-        """Conecta al servidor IMAP de Outlook"""
+        """Conecta al servidor IMAP"""
         try:
-            self.mail = imaplib.IMAP4_SSL(self.OUTLOOK_IMAP_SERVER, self.OUTLOOK_IMAP_PORT)
+            logger.info(f"Conectando a {self.imap_server}:{self.imap_port} para {self.email_address}")
+            self.mail = imaplib.IMAP4_SSL(self.imap_server, self.imap_port)
             self.mail.login(self.email_address, self.password)
-            logger.info(f"Conectado exitosamente a {self.email_address}")
+            logger.info(f"Conectado exitosamente a {self.email_address} ({self.provider})")
             return True
         except Exception as e:
-            logger.error(f"Error al conectar a {self.email_address}: {str(e)}")
+            logger.error(f"Error al conectar a {self.email_address} ({self.provider}): {str(e)}")
             raise
     
     def disconnect(self):
@@ -239,15 +269,15 @@ class OutlookIMAPService:
             logger.error(f"Error al marcar correo como leído: {str(e)}")
 
 
-class OutlookMonitor:
-    """Monitor para múltiples cuentas de Outlook"""
+class EmailMonitor:
+    """Monitor para múltiples cuentas de correo (multi-proveedor)"""
     
     def __init__(self, accounts: List[Dict[str, str]]):
         """
         Inicializa el monitor con múltiples cuentas
         
         Args:
-            accounts: Lista de diccionarios con 'email' y 'password'
+            accounts: Lista de diccionarios con 'email', 'password', y opcionalmente 'provider'
         """
         self.accounts = accounts
         self.services = []
@@ -267,13 +297,22 @@ class OutlookMonitor:
         for account in self.accounts:
             email_address = account.get('email')
             password = account.get('password')
+            provider = account.get('provider', 'outlook')  # Default a outlook si no se especifica
+            custom_server = account.get('imap_server')
+            custom_port = account.get('imap_port', 993)
             
             if not email_address or not password:
                 logger.warning(f"Cuenta sin email o password: {account}")
                 continue
             
             try:
-                service = OutlookIMAPService(email_address, password)
+                service = IMAPService(
+                    email_address=email_address,
+                    password=password,
+                    provider=provider,
+                    custom_server=custom_server,
+                    custom_port=custom_port
+                )
                 service.connect()
                 
                 emails = service.fetch_netflix_emails(days_back)
@@ -289,3 +328,6 @@ class OutlookMonitor:
         all_emails.sort(key=lambda x: x['date'], reverse=True)
         
         return all_emails
+
+# Mantener compatibilidad con código existente
+OutlookMonitor = EmailMonitor

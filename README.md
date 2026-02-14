@@ -1,6 +1,6 @@
 # 📧 Netflix Codes Monitor - Monitor de Códigos de Netflix
 
-Aplicación web en Python que monitorea múltiples cuentas de Outlook vía IMAP para detectar y mostrar automáticamente correos de Netflix relacionados con:
+Aplicación web en Python que monitorea múltiples cuentas de correo vía IMAP (Outlook, Gmail, y otros) para detectar y mostrar automáticamente correos de Netflix relacionados con:
 
 - 🔑 **Códigos de inicio de sesión**
 - ⏱️ **Códigos temporales**
@@ -8,7 +8,9 @@ Aplicación web en Python que monitorea múltiples cuentas de Outlook vía IMAP 
 
 ## ✨ Características
 
-- ✅ Conexión directa a Outlook vía IMAP (sin necesidad de redireccionar correos)
+- ✅ Soporte para múltiples proveedores: **Outlook**, **Gmail**, y **IMAP personalizado**
+- ✅ Compatible con **Cloudflare Email Routing** (reenvío a Gmail/Outlook)
+- ✅ Conexión directa vía IMAP (sin necesidad de redireccionar correos manualmente)
 - ✅ Monitoreo de múltiples cuentas simultáneamente
 - ✅ Interfaz web moderna con tema oscuro estilo Netflix
 - ✅ Actualizaciones en tiempo real con WebSockets
@@ -25,7 +27,7 @@ Aplicación web en Python que monitorea múltiples cuentas de Outlook vía IMAP 
 pip install -r requirements.txt
 ```
 
-### 2. Configurar Cuentas de Outlook
+### 2. Configurar Cuentas de Correo
 
 Copia el archivo de ejemplo y edítalo con tus credenciales:
 
@@ -33,30 +35,59 @@ Copia el archivo de ejemplo y edítalo con tus credenciales:
 copy accounts.json.example accounts.json
 ```
 
-Edita `accounts.json`:
+Edita `accounts.json` y especifica el proveedor para cada cuenta:
 
 ```json
 {
   "accounts": [
     {
       "email": "cuenta1@outlook.com",
-      "password": "tu-contraseña-de-aplicacion"
+      "password": "tu-contraseña-de-aplicacion",
+      "provider": "outlook"
     },
     {
-      "email": "cuenta2@outlook.com",
-      "password": "tu-contraseña-de-aplicacion"
+      "email": "tucorreo@gmail.com",
+      "password": "tu-contraseña-de-aplicacion",
+      "provider": "gmail"
+    },
+    {
+      "email": "correo@tudominio.com",
+      "password": "tu-contraseña",
+      "provider": "custom",
+      "imap_server": "mail.tudominio.com",
+      "imap_port": 993
     }
   ]
 }
 ```
 
-⚠️ **IMPORTANTE**: Para Outlook/Microsoft 365, necesitas usar una **contraseña de aplicación** en lugar de tu contraseña normal:
+#### 📧 Configuración por Proveedor:
 
+**Outlook/Microsoft 365:**
 1. Ve a https://account.microsoft.com/security
-2. Activa la verificación en dos pasos si no está activa
+2. Activa la verificación en dos pasos
 3. Ve a "Contraseñas de aplicación"
 4. Genera una nueva contraseña para "IMAP"
-5. Usa esa contraseña en el archivo `accounts.json`
+5. Usa `"provider": "outlook"` en accounts.json
+
+**Gmail/Google Workspace:**
+1. Ve a https://myaccount.google.com/security
+2. Activa la verificación en dos pasos
+3. Ve a https://myaccount.google.com/apppasswords
+4. Genera una contraseña de aplicación
+5. Habilita IMAP en configuración de Gmail
+6. Usa `"provider": "gmail"` en accounts.json
+7. **Ver guía detallada**: [CONFIGURACION-GMAIL.md](CONFIGURACION-GMAIL.md)
+
+**Cloudflare Email Routing:**
+- Configura el reenvío en Cloudflare a Gmail u Outlook
+- Usa la cuenta de destino (Gmail/Outlook) en accounts.json
+- Ejemplo: `digitalacc06@tudominio.com` → reenvía a → `tucorreo@gmail.com`
+- Configura `tucorreo@gmail.com` con `"provider": "gmail"`
+
+**Otros proveedores IMAP:**
+- Usa `"provider": "custom"`
+- Especifica `"imap_server"` y `"imap_port"`
 
 ### 3. Configurar Ajustes (Opcional)
 
