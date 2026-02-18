@@ -1,6 +1,6 @@
 # 📧 Netflix Codes Monitor - Monitor de Códigos de Netflix
 
-Aplicación web en Python que monitorea múltiples cuentas de correo vía IMAP (Outlook, Gmail, y otros) para detectar y mostrar automáticamente correos de Netflix relacionados con:
+Aplicación web en Python que monitorea cuentas de Gmail vía IMAP para detectar y mostrar automáticamente correos de Netflix relacionados con:
 
 - 🔑 **Códigos de inicio de sesión**
 - ⏱️ **Códigos temporales**
@@ -8,10 +8,10 @@ Aplicación web en Python que monitorea múltiples cuentas de correo vía IMAP (
 
 ## ✨ Características
 
-- ✅ Soporte para múltiples proveedores: **Outlook**, **Gmail**, y **IMAP personalizado**
-- ✅ Compatible con **Cloudflare Email Routing** (reenvío a Gmail/Outlook)
+- ✅ Soporte para **Gmail** con contraseñas de aplicación
+- ✅ Compatible con **Cloudflare Email Routing** (reenvío a Gmail)
 - ✅ Conexión directa vía IMAP (sin necesidad de redireccionar correos manualmente)
-- ✅ Monitoreo de múltiples cuentas simultáneamente
+- ✅ Monitoreo de múltiples cuentas de Gmail simultáneamente
 - ✅ Interfaz web moderna con tema oscuro estilo Netflix
 - ✅ Actualizaciones en tiempo real con WebSockets
 - ✅ Filtrado por tipo de correo y cuenta
@@ -27,7 +27,7 @@ Aplicación web en Python que monitorea múltiples cuentas de correo vía IMAP (
 pip install -r requirements.txt
 ```
 
-### 2. Configurar Cuentas de Correo
+### 2. Configurar Cuentas de Gmail
 
 Copia el archivo de ejemplo y edítalo con tus credenciales:
 
@@ -35,40 +35,24 @@ Copia el archivo de ejemplo y edítalo con tus credenciales:
 copy accounts.json.example accounts.json
 ```
 
-Edita `accounts.json` y especifica el proveedor para cada cuenta:
+Edita `accounts.json` con tus cuentas de Gmail:
 
 ```json
 {
   "accounts": [
     {
-      "email": "cuenta1@outlook.com",
-      "password": "tu-contraseña-de-aplicacion",
-      "provider": "outlook"
-    },
-    {
       "email": "tucorreo@gmail.com",
-      "password": "tu-contraseña-de-aplicacion",
-      "provider": "gmail"
+      "password": "tu-contraseña-de-aplicacion"
     },
     {
-      "email": "correo@tudominio.com",
-      "password": "tu-contraseña",
-      "provider": "custom",
-      "imap_server": "mail.tudominio.com",
-      "imap_port": 993
+      "email": "otracuenta@gmail.com",
+      "password": "otra-contraseña-de-aplicacion"
     }
   ]
 }
 ```
 
-#### 📧 Configuración por Proveedor:
-
-**Outlook/Microsoft 365:**
-1. Ve a https://account.microsoft.com/security
-2. Activa la verificación en dos pasos
-3. Ve a "Contraseñas de aplicación"
-4. Genera una nueva contraseña para "IMAP"
-5. Usa `"provider": "outlook"` en accounts.json
+#### 📧 Configuración de Gmail:
 
 **Gmail/Google Workspace:**
 1. Ve a https://myaccount.google.com/security
@@ -76,18 +60,13 @@ Edita `accounts.json` y especifica el proveedor para cada cuenta:
 3. Ve a https://myaccount.google.com/apppasswords
 4. Genera una contraseña de aplicación
 5. Habilita IMAP en configuración de Gmail
-6. Usa `"provider": "gmail"` en accounts.json
-7. **Ver guía detallada**: [CONFIGURACION-GMAIL.md](CONFIGURACION-GMAIL.md)
+6. **Ver guía detallada**: [CONFIGURACION-GMAIL.md](CONFIGURACION-GMAIL.md)
 
 **Cloudflare Email Routing:**
-- Configura el reenvío en Cloudflare a Gmail u Outlook
-- Usa la cuenta de destino (Gmail/Outlook) en accounts.json
+- Configura el reenvío en Cloudflare a Gmail
+- Usa la cuenta de Gmail de destino en accounts.json
 - Ejemplo: `digitalacc06@tudominio.com` → reenvía a → `tucorreo@gmail.com`
-- Configura `tucorreo@gmail.com` con `"provider": "gmail"`
-
-**Otros proveedores IMAP:**
-- Usa `"provider": "custom"`
-- Especifica `"imap_server"` y `"imap_port"`
+- Configura `tucorreo@gmail.com` en accounts.json
 
 ### 3. Configurar Ajustes (Opcional)
 
@@ -161,7 +140,7 @@ DEBUG=False
 
 ### Ajustar Límites de Tasa
 
-Si experimentas bloqueos por parte de Outlook:
+Si experimentas bloqueos por parte de Gmail:
 
 1. Aumenta el `check_interval` a 300 segundos (5 minutos) o más
 2. Reduce el número de cuentas monitoreadas simultáneamente
@@ -182,13 +161,13 @@ Si experimentas bloqueos por parte de Outlook:
 └────────┬────────┘
          │
 ┌────────▼────────┐
-│  Outlook IMAP   │
+│   Gmail IMAP    │
 │    Service      │
 │(outlook_service)│
 └────────┬────────┘
          │
 ┌────────▼────────┐
-│ Outlook Servers │
+│  Gmail Servers  │
 │  (IMAP 993)     │
 └─────────────────┘
 ```
@@ -196,7 +175,7 @@ Si experimentas bloqueos por parte de Outlook:
 ### Componentes
 
 - **app.py**: Servidor Flask con Socket.IO para actualizaciones en tiempo real
-- **outlook_service.py**: Servicio IMAP para conectar a Outlook y filtrar correos
+- **outlook_service.py**: Servicio IMAP para conectar a Gmail y filtrar correos
 - **templates/index.html**: Interfaz web moderna
 - **static/css/style.css**: Estilos con tema oscuro estilo Netflix
 - **static/js/app.js**: Lógica frontend con WebSockets
@@ -206,8 +185,9 @@ Si experimentas bloqueos por parte de Outlook:
 ### Error: "Authentication failed"
 
 - ✅ Verifica que estés usando una **contraseña de aplicación**, no tu contraseña normal
-- ✅ Asegúrate que la verificación en dos pasos esté activa en tu cuenta Microsoft
+- ✅ Asegúrate que la verificación en dos pasos esté activa en tu cuenta de Google
 - ✅ Genera una nueva contraseña de aplicación
+- ✅ Verifica que IMAP esté habilitado en la configuración de Gmail
 
 ### Error: "Connection timeout"
 
@@ -224,7 +204,7 @@ Si experimentas bloqueos por parte de Outlook:
 ### El monitoreo se detiene solo
 
 - ✅ Reduce la frecuencia de verificación (aumenta `check_interval`)
-- ✅ Microsoft puede estar bloqueando temporalmente por demasiadas solicitudes
+- ✅ Gmail puede estar bloqueando temporalmente por demasiadas solicitudes
 - ✅ Espera 15-30 minutos antes de reintentar
 
 ## 🔒 Seguridad
@@ -240,7 +220,7 @@ Si experimentas bloqueos por parte de Outlook:
 
 - **Velocidad**: 2-5 segundos por cuenta para consultas con filtros
 - **Intervalo recomendado**: 60-300 segundos (1-5 minutos)
-- **Límites de Microsoft**: ~100 conexiones por hora por cuenta
+- **Límites de Gmail**: ~100 conexiones por hora por cuenta
 - **Verificación manual**: Sin límites prácticos, disponible al instante
 
 ### Tipos de Correos Detectados
@@ -253,7 +233,6 @@ La aplicación busca específicamente correos de Netflix con:
 
 ## 🚀 Próximas Mejoras
 
-- [ ] Soporte para Gmail (adicional a Outlook)
 - [ ] Base de datos para historial de correos
 - [ ] Exportar correos a CSV/Excel
 - [ ] API REST para integración con otras aplicaciones

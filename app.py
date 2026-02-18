@@ -4,7 +4,7 @@ import json
 import os
 import logging
 from datetime import datetime
-from outlook_service import OutlookMonitor
+from outlook_service import GmailMonitor
 import threading
 import time
 
@@ -28,15 +28,15 @@ monitoring_thread = None
 def load_accounts():
     """Carga las cuentas desde variable de entorno o archivo de configuración"""
     # Intentar cargar desde variable de entorno primero (para deployment en nube)
-    # Soporta EMAIL_ACCOUNTS (nuevo) y OUTLOOK_ACCOUNTS (compatibilidad)
-    env_accounts = os.environ.get('EMAIL_ACCOUNTS') or os.environ.get('OUTLOOK_ACCOUNTS')
+    # Soporta EMAIL_ACCOUNTS (nuevo) y GMAIL_ACCOUNTS
+    env_accounts = os.environ.get('EMAIL_ACCOUNTS') or os.environ.get('GMAIL_ACCOUNTS')
     if env_accounts:
         try:
             accounts = json.loads(env_accounts)
             logger.info(f"Cuentas cargadas desde variable de entorno: {len(accounts)}")
             return accounts
         except json.JSONDecodeError as e:
-            logger.error(f"Error al parsear EMAIL_ACCOUNTS/OUTLOOK_ACCOUNTS desde variable de entorno: {str(e)}")
+            logger.error(f"Error al parsear EMAIL_ACCOUNTS/GMAIL_ACCOUNTS desde variable de entorno: {str(e)}")
     
     # Fallback: Intentar cargar desde archivo
     try:
@@ -46,7 +46,7 @@ def load_accounts():
             logger.info(f"Cuentas cargadas desde accounts.json: {len(accounts)}")
             return accounts
     except FileNotFoundError:
-        logger.warning("Archivo accounts.json no encontrado. Usa EMAIL_ACCOUNTS o OUTLOOK_ACCOUNTS env var o crea accounts.json")
+        logger.warning("Archivo accounts.json no encontrado. Usa EMAIL_ACCOUNTS o GMAIL_ACCOUNTS env var o crea accounts.json")
         return []
     except Exception as e:
         logger.error(f"Error al cargar accounts.json: {str(e)}")
@@ -234,8 +234,8 @@ def start_monitoring():
                 'error': 'No hay cuentas configuradas'
             }), 400
         
-        # Inicializar monitor
-        monitor = OutlookMonitor(accounts)
+        # Inicializar monitor de Gmail
+        monitor = GmailMonitor(accounts)
         
         # Iniciar thread de monitoreo
         monitoring_active = True

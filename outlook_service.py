@@ -9,23 +9,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 class IMAPService:
-    """Servicio para conectar y leer correos vía IMAP (multi-proveedor)"""
+    """Servicio para conectar y leer correos de Gmail vía IMAP"""
     
-    # Configuraciones de servidores IMAP por proveedor
-    IMAP_SERVERS = {
-        'outlook': {
-            'server': 'outlook.office365.com',
-            'port': 993
-        },
-        'gmail': {
-            'server': 'imap.gmail.com',
-            'port': 993
-        },
-        'custom': {
-            'server': None,  # Se debe especificar
-            'port': 993
-        }
-    }
+    # Configuración de servidor IMAP de Gmail
+    IMAP_SERVER = 'imap.gmail.com'
+    IMAP_PORT = 993
     
     # Patrones para identificar correos de Netflix
     NETFLIX_PATTERNS = {
@@ -49,44 +37,30 @@ class IMAPService:
         ]
     }
     
-    def __init__(self, email_address: str, password: str, provider: str = 'outlook', 
-                 custom_server: str = None, custom_port: int = 993):
+    def __init__(self, email_address: str, password: str):
         """
-        Inicializa el servicio IMAP
+        Inicializa el servicio IMAP para Gmail
         
         Args:
-            email_address: Dirección de correo
-            password: Contraseña o contraseña de aplicación
-            provider: Proveedor IMAP ('outlook', 'gmail', 'custom')
-            custom_server: Servidor IMAP personalizado (solo si provider='custom')
-            custom_port: Puerto IMAP personalizado (solo si provider='custom')
+            email_address: Dirección de correo de Gmail
+            password: Contraseña de aplicación de Gmail
         """
         self.email_address = email_address
         self.password = password
-        self.provider = provider.lower()
         self.mail = None
-        
-        # Determinar servidor y puerto
-        if self.provider in self.IMAP_SERVERS:
-            config = self.IMAP_SERVERS[self.provider]
-            self.imap_server = custom_server if self.provider == 'custom' and custom_server else config['server']
-            self.imap_port = custom_port if self.provider == 'custom' else config['port']
-        else:
-            # Fallback a Outlook si el proveedor no es reconocido
-            logger.warning(f"Proveedor '{provider}' no reconocido, usando Outlook por defecto")
-            self.imap_server = self.IMAP_SERVERS['outlook']['server']
-            self.imap_port = self.IMAP_SERVERS['outlook']['port']
+        self.imap_server = self.IMAP_SERVER
+        self.imap_port = self.IMAP_PORT
         
     def connect(self):
         """Conecta al servidor IMAP"""
         try:
-            logger.info(f"Conectando a {self.imap_server}:{self.imap_port} para {self.email_address}")
+            logger.info(f"Conectando a Gmail ({self.imap_server}:{self.imap_port}) para {self.email_address}")
             self.mail = imaplib.IMAP4_SSL(self.imap_server, self.imap_port)
             self.mail.login(self.email_address, self.password)
-            logger.info(f"Conectado exitosamente a {self.email_address} ({self.provider})")
+            logger.info(f"Conectado exitosamente a Gmail: {self.email_address}")
             return True
         except Exception as e:
-            logger.error(f"Error al conectar a {self.email_address} ({self.provider}): {str(e)}")
+            logger.error(f"Error al conectar a Gmail ({self.email_address}): {str(e)}")
             raise
     
     def disconnect(self):
@@ -204,7 +178,6 @@ class IMAPService:
         search_date = (datetime.now() - timedelta(days=days_back)).strftime("%d-%b-%Y")
         
         # Buscar correos de Netflix
-        # Nota: Outlook podría no soportar todas las búsquedas, así que usamos un enfoque más simple
         status, messages = self.mail.search(None, f'(FROM "netflix.com" SINCE {search_date})')
         
         if status != "OK":
@@ -269,22 +242,22 @@ class IMAPService:
             logger.error(f"Error al marcar correo como leído: {str(e)}")
 
 
-class EmailMonitor:
-    """Monitor para múltiples cuentas de correo (multi-proveedor)"""
+class GmailMonitor:
+    """Monitor para múltiples cuentas de Gmail"""
     
     def __init__(self, accounts: List[Dict[str, str]]):
         """
-        Inicializa el monitor con múltiples cuentas
+        Inicializa el monitor con múltiples cuentas de Gmail
         
         Args:
-            accounts: Lista de diccionarios con 'email', 'password', y opcionalmente 'provider'
+            accounts: Lista de diccionarios con 'email' y 'password'
         """
         self.accounts = accounts
         self.services = []
         
     def fetch_all_netflix_emails(self, days_back: int = 7) -> List[Dict]:
         """
-        Obtiene correos de Netflix de todas las cuentas configuradas
+        Obtiene correos de Netflix de todas las cuentas de Gmail configuradas
         
         Args:
             days_back: Número de días hacia atrás para buscar
@@ -297,9 +270,6 @@ class EmailMonitor:
         for account in self.accounts:
             email_address = account.get('email')
             password = account.get('password')
-            provider = account.get('provider', 'outlook')  # Default a outlook si no se especifica
-            custom_server = account.get('imap_server')
-            custom_port = account.get('imap_port', 993)
             
             if not email_address or not password:
                 logger.warning(f"Cuenta sin email o password: {account}")
@@ -308,10 +278,7 @@ class EmailMonitor:
             try:
                 service = IMAPService(
                     email_address=email_address,
-                    password=password,
-                    provider=provider,
-                    custom_server=custom_server,
-                    custom_port=custom_port
+                    password=password
                 )
                 service.connect()
                 
@@ -321,7 +288,7 @@ class EmailMonitor:
                 service.disconnect()
                 
             except Exception as e:
-                logger.error(f"Error al procesar cuenta {email_address}: {str(e)}")
+                logger.error(f"Error al procesar cuenta de Gmail {email_address}: {str(e)}")
                 continue
         
         # Ordenar por fecha (más recientes primero)
@@ -330,4 +297,5 @@ class EmailMonitor:
         return all_emails
 
 # Mantener compatibilidad con código existente
-OutlookMonitor = EmailMonitor
+EmailMonitor = GmailMonitor
+OutlookMonitor = GmailMonitor

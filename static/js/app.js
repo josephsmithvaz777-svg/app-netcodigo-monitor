@@ -24,7 +24,6 @@ const elements = {
 
     // Filters
     typeFilter: document.getElementById('typeFilter'),
-    accountFilter: document.getElementById('accountFilter'),
 
     // Emails
     emailsContainer: document.getElementById('emailsContainer'),
@@ -106,7 +105,6 @@ function setupEventListeners() {
 
     // Filters
     elements.typeFilter.addEventListener('change', applyFilters);
-    elements.accountFilter.addEventListener('change', applyFilters);
 
     // Modal
     elements.settingsBtn.addEventListener('click', openSettingsModal);
@@ -242,13 +240,11 @@ function updateMonitoringUI(monitoring) {
 async function loadEmails() {
     try {
         const typeFilter = elements.typeFilter.value;
-        const accountFilter = elements.accountFilter.value;
 
         let url = '/api/emails';
         const params = new URLSearchParams();
 
         if (typeFilter) params.append('type', typeFilter);
-        if (accountFilter) params.append('account', accountFilter);
 
         if (params.toString()) {
             url += '?' + params.toString();
@@ -291,21 +287,11 @@ async function loadAccounts() {
         const data = await response.json();
 
         if (data.success) {
-            // Populate account filter
-            elements.accountFilter.innerHTML = '<option value="">Todas las cuentas</option>';
-
-            data.accounts.forEach(account => {
-                const option = document.createElement('option');
-                option.value = account.email;
-                option.textContent = account.email;
-                elements.accountFilter.appendChild(option);
-            });
-
             // Populate accounts list in settings
             elements.accountsList.innerHTML = '';
 
             if (data.accounts.length === 0) {
-                elements.accountsList.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">No hay cuentas configuradas. Edita el archivo accounts.json</p>';
+                elements.accountsList.innerHTML = '<p style="color: var(--netflix-gray); font-size: 14px;">No hay cuentas configuradas. Edita el archivo accounts.json</p>';
             } else {
                 data.accounts.forEach(account => {
                     const item = document.createElement('div');
@@ -378,9 +364,12 @@ function renderEmails(emails) {
 
     elements.emailsContainer.innerHTML = '';
 
-    emails.forEach(email => {
-        const card = createEmailCard(email);
-        elements.emailsContainer.appendChild(card);
+    // Agregar cada email con un delay para animación escalonada
+    emails.forEach((email, index) => {
+        setTimeout(() => {
+            const card = createEmailCard(email);
+            elements.emailsContainer.appendChild(card);
+        }, index * 100); // 100ms de delay entre cada tarjeta
     });
 }
 
