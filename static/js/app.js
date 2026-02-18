@@ -29,12 +29,17 @@ const elements = {
     emailsContainer: document.getElementById('emailsContainer'),
     lastUpdate: document.getElementById('lastUpdate'),
 
-    // Modal
+    // Modals
     settingsBtn: document.getElementById('settingsBtn'),
     settingsModal: document.getElementById('settingsModal'),
     closeSettingsBtn: document.getElementById('closeSettingsBtn'),
     cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
     saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+
+    emailModal: document.getElementById('emailModal'),
+    closeEmailBtn: document.getElementById('closeEmailBtn'),
+    closeEmailFooterBtn: document.getElementById('closeEmailFooterBtn'),
+    emailViewer: document.getElementById('emailViewer'),
 
     // Settings Form
     checkInterval: document.getElementById('checkInterval'),
@@ -106,17 +111,19 @@ function setupEventListeners() {
     // Filters
     elements.typeFilter.addEventListener('change', applyFilters);
 
-    // Modal
+    // Modals
     elements.settingsBtn.addEventListener('click', openSettingsModal);
     elements.closeSettingsBtn.addEventListener('click', closeSettingsModal);
     elements.cancelSettingsBtn.addEventListener('click', closeSettingsModal);
     elements.saveSettingsBtn.addEventListener('click', saveSettings);
 
-    // Close modal on outside click
-    elements.settingsModal.addEventListener('click', (e) => {
-        if (e.target === elements.settingsModal) {
-            closeSettingsModal();
-        }
+    elements.closeEmailBtn.addEventListener('click', closeEmailModal);
+    elements.closeEmailFooterBtn.addEventListener('click', closeEmailModal);
+
+    // Close modals on outside click
+    window.addEventListener('click', (e) => {
+        if (e.target === elements.settingsModal) closeSettingsModal();
+        if (e.target === elements.emailModal) closeEmailModal();
     });
 
     // Request notification permission
@@ -237,6 +244,21 @@ function updateMonitoringUI(monitoring) {
 }
 
 // Load Data
+// Emails Rendering & Modal
+function openEmailModal(emailId) {
+    const email = currentEmails.find(e => e.id === emailId);
+    if (!email) return;
+
+    elements.emailViewer.innerHTML = email.body_full || 'No hay contenido disponible';
+    elements.emailModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEmailModal() {
+    elements.emailModal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
 async function loadEmails() {
     try {
         const typeFilter = elements.typeFilter.value;
@@ -416,9 +438,14 @@ function createEmailCard(email) {
                             Abrir Link
                         </a>
                     </div>
-                    <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar link">
-                        <i class="fas fa-copy"></i>
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-icon" onclick="openEmailModal('${email.id}')" title="Ver correo original">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar link">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
                 </div>
             ` : `
                 <div class="email-code">
@@ -426,12 +453,23 @@ function createEmailCard(email) {
                         <div class="code-label">Código extraído:</div>
                         <div class="code-value">${escapeHtml(email.code)}</div>
                     </div>
-                    <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar código">
-                        <i class="fas fa-copy"></i>
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-icon" onclick="openEmailModal('${email.id}')" title="Ver correo original">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar código">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
                 </div>
             `}
-        ` : ''}
+        ` : `
+            <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+                <button class="btn btn-icon" onclick="openEmailModal('${email.id}')" title="Ver correo original">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        `}
         
         ${email.body_preview ? `
             <div class="email-preview">

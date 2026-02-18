@@ -512,6 +512,13 @@ body {
     width: 100%;
     border: 1px solid rgba(255, 255, 255, 0.1);
     animation: slideUp 0.3s ease-out;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content.large {
+    max-width: 900px;
 }
 
 @keyframes slideUp {
@@ -568,6 +575,22 @@ body {
 
 .modal-body {
     padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.email-content-viewer {
+    background: white;
+    color: black;
+    border-radius: 4px;
+    padding: 20px;
+    min-height: 300px;
+    overflow-x: auto;
+}
+
+.email-content-viewer.dark-mode {
+    background: #1a1a1a;
+    color: #e5e5e5;
 }
 
 .modal-footer {

@@ -255,6 +255,7 @@ class IMAPService:
                                 'type': email_type,
                                 'code': code,
                                 'body_preview': body[:200] if body else "",
+                                'body_full': body,
                                 'account': self.email_address
                             })
                             
