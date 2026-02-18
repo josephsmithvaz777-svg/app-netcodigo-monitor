@@ -415,12 +415,12 @@ function createEmailCard(email) {
         
         <div class="email-meta">
             <span>
-                <i class="fas fa-user"></i>
-                ${escapeHtml(email.from)}
+                <i class="fas fa-paper-plane" title="De"></i>
+                De: ${escapeHtml(email.from)}
             </span>
             <span>
-                <i class="fas fa-envelope"></i>
-                ${escapeHtml(email.account)}
+                <i class="fas fa-user-tag" title="Para"></i>
+                Para: ${escapeHtml(email.to || email.account)}
             </span>
             <span>
                 <i class="fas fa-clock"></i>

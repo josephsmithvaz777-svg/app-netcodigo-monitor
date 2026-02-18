@@ -393,9 +393,8 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-all;
+    /* Permitir que los emails largos se ajusten */
 }
 
 .email-meta i {

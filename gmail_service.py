@@ -257,9 +257,10 @@ class IMAPService:
                     if isinstance(response_part, tuple):
                         msg = email.message_from_bytes(response_part[1])
                         
-                        # Decodificar asunto
+                        # Decodificar asunto y destinatarios
                         subject = self._decode_mime_words(msg["Subject"])
                         from_address = self._decode_mime_words(msg["From"])
+                        to_address = self._decode_mime_words(msg["To"])
                         date_str = msg["Date"]
                         
                         # Obtener cuerpo
@@ -276,6 +277,7 @@ class IMAPService:
                                 'id': email_id.decode(),
                                 'subject': subject,
                                 'from': from_address,
+                                'to': to_address,
                                 'date': date_str,
                                 'type': email_type,
                                 'code': code,
