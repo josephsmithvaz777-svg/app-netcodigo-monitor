@@ -148,17 +148,27 @@ class IMAPService:
             El código o link encontrado, o cadena vacía
         """
         if email_type == 'codigo_inicio':
-            # Para código de inicio, extraer el código numérico
+            # Para código de inicio, buscar solo códigos con contexto específico de Netflix
+            # Evitar códigos de verificación genéricos
             patterns = [
-                r'\b(\d{4,8})\b',  # Código numérico de 4-8 dígitos
-                r'code:\s*(\d{4,8})',
-                r'código:\s*(\d{4,8})',
-                r'verification code:\s*(\d{4,8})',
-                r'sign-in code:\s*(\d{4,8})',
+                # Buscar "código para iniciar sesión" seguido del código
+                r'(?:código|code).*?(?:iniciar sesión|sign-?in|login).*?(\d{4,8})',
+                r'(?:iniciar sesión|sign-?in|login).*?(?:código|code).*?(\d{4,8})',
+                # Buscar "Ingresa este código" seguido del código
+                r'(?:ingresa|enter).*?(?:este|this).*?(?:código|code).*?(\d{4,8})',
+                # Buscar el código en un contexto de inicio de sesión
+                r'(?:para|to).*?(?:iniciar sesión|sign in).*?(\d{4,8})',
             ]
             
             for pattern in patterns:
-                match = re.search(pattern, body, re.IGNORECASE)
+                match = re.search(pattern, body, re.IGNORECASE | re.DOTALL)
+                if match:
+                    return match.group(1)
+            
+            # Si no encuentra con contexto, buscar números de 4 dígitos exactos
+            # pero solo si el correo menciona "sign-in" o "iniciar sesión"
+            if re.search(r'sign-?in|iniciar sesión', body, re.IGNORECASE):
+                match = re.search(r'\b(\d{4})\b', body)
                 if match:
                     return match.group(1)
         
