@@ -325,15 +325,30 @@ def handle_request_update():
     })
 
 if __name__ == '__main__':
-    logger.info("Iniciando servidor Flask...")
+    logger.info("Iniciando servidor Netflix Codes Monitor...")
     
     # Cargar configuración inicial
-    accounts = load_accounts()
+    accounts_config = load_accounts()
     settings = load_settings()
     
-    logger.info(f"Cuentas configuradas: {len(accounts)}")
+    logger.info(f"Cuentas configuradas: {len(accounts_config)}")
     logger.info(f"Configuración: {settings}")
+    
+    # Auto-iniciar monitor si hay cuentas
+    if accounts_config:
+        try:
+            from gmail_service import GmailMonitor
+            # Inicializar monitor global
+            monitor = GmailMonitor(accounts_config)
+            
+            # Iniciar monitoreo automático
+            monitoring_active = True
+            monitoring_thread = threading.Thread(target=monitoring_loop, daemon=True)
+            monitoring_thread.start()
+            logger.info("Auto-monitoreo iniciado al arrancar la aplicación")
+        except Exception as e:
+            logger.error(f"Error al auto-iniciar monitoreo: {str(e)}")
     
     # Iniciar servidor
     port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)

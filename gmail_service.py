@@ -18,22 +18,22 @@ class IMAPService:
     # Patrones para identificar correos de Netflix
     NETFLIX_PATTERNS = {
         'codigo_inicio': [
-            r'Código de inicio',
-            r'Sign-in code',
+            r'c[oó]digo de inicio',
+            r'sign-in code',
             r'verification code',
-            r'código de verificación'
+            r'c[oó]digo de verificaci[oó]n'
         ],
         'codigo_temporal': [
-            r'código de acceso temporal',
-            r'código temporal',
-            r'obtener código',
+            r'c[oó]digo de acceso temporal',
+            r'c[oó]digo temporal',
+            r'obtener c[oó]digo',
             r'temporary code',
             r'temporary access code',
             r'one-time code',
-            r'código de un solo uso'
+            r'c[oó]digo de un solo uso'
         ],
         'actualizacion_hogar': [
-            r'actualización de hogar',
+            r'actualizaci[oó]n de hogar',
             r'actualizar tu hogar',
             r'confirmar hogar',
             r'household update',
@@ -238,17 +238,27 @@ class IMAPService:
         # Seleccionar la bandeja de entrada
         self.mail.select("INBOX")
         
-        # Calcular fecha de búsqueda
-        search_date = (datetime.now() - timedelta(days=days_back)).strftime("%d-%b-%Y")
+        # Calcular fecha de búsqueda (formato IMAP: 17-Feb-2026)
+        # Usamos days_back + 1 para asegurar que no se pierdan correos del borde del día
+        search_date = (datetime.now() - timedelta(days=days_back + 1)).strftime("%d-%b-%Y")
         
-        # Buscar correos de Netflix
+        logger.info(f"[{self.email_address}] Buscando desde {search_date} (días: {days_back})")
+        
+        # Buscar correos de Netflix de forma más flexible
+        # Intentamos primero con FROM de Netflix
         status, messages = self.mail.search(None, f'(FROM "netflix.com" SINCE {search_date})')
         
+        if status != "OK" or not messages[0]:
+            # Si falla, intentamos buscar por asunto "Netflix"
+            logger.info(f"[{self.email_address}] No se encontraron por remitente, intentando por asunto...")
+            status, messages = self.mail.search(None, f'(SUBJECT "Netflix" SINCE {search_date})')
+        
         if status != "OK":
-            logger.warning("No se pudieron buscar correos de Netflix")
+            logger.warning(f"[{self.email_address}] Error al ejecutar búsqueda IMAP")
             return []
         
         email_ids = messages[0].split()
+        logger.info(f"[{self.email_address}] Encontrados {len(email_ids)} correos potenciales")
         netflix_emails = []
         
         # Procesar cada correo
