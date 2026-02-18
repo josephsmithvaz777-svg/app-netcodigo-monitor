@@ -202,10 +202,13 @@ class IMAPService:
                     return re.sub(r'[)\]}>"\'\s]+$', '', link)
 
         elif email_type == 'codigo_temporal':
-            # Para código temporal, el link suele contener /temporary-access/ o /code/
+            # Para código temporal, el link suele contener /temporary-access/, /access/ o /otp/
             patterns = [
                 r'https?://[^\s<>"]+netflix\.com/temporary-access/[^\s<>"]+',
+                r'https?://[^\s<>"]+netflix\.com/account/[^\s<>"]*?access[^\s<>"]*',
                 r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?access[^\s<>"]*',
+                r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?temp-access[^\s<>"]*',
+                r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?otp[^\s<>"]*',
             ]
             for pattern in patterns:
                 match = re.search(pattern, body, re.IGNORECASE)
