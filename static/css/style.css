@@ -312,9 +312,9 @@ body {
 }
 
 .emails-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
 }
 
 /* Email Card - Minimalista con animación */
@@ -352,7 +352,7 @@ body {
 .email-card:hover {
     background: rgba(255, 255, 255, 0.08);
     border-left-width: 4px;
-    transform: translateX(4px);
+    transform: translateY(-4px);
 }
 
 .email-header {
@@ -382,9 +382,9 @@ body {
 
 .email-meta {
     display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    font-size: 12px;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
     color: var(--netflix-gray);
     margin-bottom: 12px;
 }
@@ -393,10 +393,14 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .email-meta i {
     color: var(--netflix-red);
+    width: 14px;
 }
 
 /* Código destacado */
@@ -404,7 +408,7 @@ body {
     background: rgba(229, 9, 20, 0.1);
     border: 2px dashed var(--netflix-red);
     border-radius: 6px;
-    padding: 16px;
+    padding: 12px;
     margin-top: 12px;
     display: flex;
     align-items: center;
@@ -425,27 +429,23 @@ body {
 }
 
 .code-label {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--netflix-gray);
     font-weight: 500;
     margin-bottom: 4px;
 }
 
 .code-value {
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--netflix-red);
     font-family: 'Courier New', monospace;
-    letter-spacing: 6px;
+    letter-spacing: 2px;
 }
 
 .email-preview {
-    font-size: 13px;
-    color: var(--netflix-gray);
-    line-height: 1.6;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: none;
+    /* Ocultar preview en modo grid para máxima limpieza */
 }
 
 /* Empty State */
