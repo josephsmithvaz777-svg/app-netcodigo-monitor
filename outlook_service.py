@@ -136,25 +136,48 @@ class IMAPService:
         
         return None
     
-    def _extract_code(self, body: str) -> str:
+    def _extract_code_or_link(self, body: str, email_type: str) -> str:
         """
-        Extrae el código de verificación del cuerpo del correo
+        Extrae el código o link según el tipo de correo
+        
+        Args:
+            body: Cuerpo del correo
+            email_type: Tipo de correo (codigo_inicio, codigo_temporal, actualizacion_hogar)
         
         Returns:
-            El código encontrado o cadena vacía
+            El código o link encontrado, o cadena vacía
         """
-        # Patrones comunes para códigos de Netflix
-        patterns = [
-            r'\b([A-Z0-9]{4,8})\b',  # Código alfanumérico de 4-8 caracteres
-            r'code:\s*([A-Z0-9]{4,8})',
-            r'código:\s*([A-Z0-9]{4,8})',
-            r'verification code:\s*([A-Z0-9]{4,8})',
-        ]
+        if email_type == 'codigo_inicio':
+            # Para código de inicio, extraer el código numérico
+            patterns = [
+                r'\b(\d{4,8})\b',  # Código numérico de 4-8 dígitos
+                r'code:\s*(\d{4,8})',
+                r'código:\s*(\d{4,8})',
+                r'verification code:\s*(\d{4,8})',
+                r'sign-in code:\s*(\d{4,8})',
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, body, re.IGNORECASE)
+                if match:
+                    return match.group(1)
         
-        for pattern in patterns:
-            match = re.search(pattern, body, re.IGNORECASE)
-            if match:
-                return match.group(1)
+        elif email_type in ['codigo_temporal', 'actualizacion_hogar']:
+            # Para código temporal y actualizar hogar, extraer el link
+            patterns = [
+                r'https?://[^\s<>"]+netflix\.com[^\s<>"]*',  # Links de Netflix
+                r'https?://account\.netflix\.com[^\s<>"]*',
+                r'https?://www\.netflix\.com[^\s<>"]*',
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, body, re.IGNORECASE)
+                if match:
+                    # Limpiar el link de posibles caracteres HTML
+                    link = match.group(0)
+                    # Remover caracteres comunes al final que no son parte del link
+                    link = re.sub(r'[)\]}>"\'\s]+$', '', link)
+                    return link
         
         return ""
     
@@ -211,8 +234,8 @@ class IMAPService:
                         email_type = self._classify_email(subject, body)
                         
                         if email_type:
-                            # Extraer código
-                            code = self._extract_code(body)
+                            # Extraer código o link según el tipo
+                            code = self._extract_code_or_link(body, email_type)
                             
                             netflix_emails.append({
                                 'id': email_id.decode(),

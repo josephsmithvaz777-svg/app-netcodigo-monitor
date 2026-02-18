@@ -407,15 +407,30 @@ function createEmailCard(email) {
         </div>
         
         ${email.code ? `
-            <div class="email-code">
-                <div>
-                    <div class="code-label">Código extraído:</div>
-                    <div class="code-value">${escapeHtml(email.code)}</div>
+            ${email.code.startsWith('http') ? `
+                <div class="email-code">
+                    <div>
+                        <div class="code-label">${email.type === 'actualizacion_hogar' ? 'Link para actualizar hogar:' : 'Link de acceso temporal:'}</div>
+                        <a href="${escapeHtml(email.code)}" target="_blank" class="btn btn-primary" style="margin-top: 8px;">
+                            <i class="fas fa-external-link-alt"></i>
+                            Abrir Link
+                        </a>
+                    </div>
+                    <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar link">
+                        <i class="fas fa-copy"></i>
+                    </button>
                 </div>
-                <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar código">
-                    <i class="fas fa-copy"></i>
-                </button>
-            </div>
+            ` : `
+                <div class="email-code">
+                    <div>
+                        <div class="code-label">Código extraído:</div>
+                        <div class="code-value">${escapeHtml(email.code)}</div>
+                    </div>
+                    <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar código">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            `}
         ` : ''}
         
         ${email.body_preview ? `
