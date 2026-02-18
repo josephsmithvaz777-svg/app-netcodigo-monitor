@@ -31,7 +31,10 @@ class IMAPService:
         ],
         'actualizacion_hogar': [
             r'actualización de hogar',
+            r'actualizar tu hogar',
+            r'confirmar hogar',
             r'household update',
+            r'update your netflix household',
             r'manage your household',
             r'administra tu hogar'
         ]
