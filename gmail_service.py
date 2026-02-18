@@ -96,32 +96,41 @@ class IMAPService:
         return ''.join(result)
     
     def _get_email_body(self, msg):
-        """Extrae el cuerpo del correo"""
-        body = ""
+        """Extrae el cuerpo del correo, priorizando HTML para una mejor visualización"""
+        html_body = ""
+        plain_body = ""
         
         if msg.is_multipart():
             for part in msg.walk():
                 content_type = part.get_content_type()
                 content_disposition = str(part.get("Content-Disposition"))
                 
-                if content_type == "text/plain" and "attachment" not in content_disposition:
+                if "attachment" in content_disposition:
+                    continue
+                    
+                if content_type == "text/html":
                     try:
-                        body = part.get_payload(decode=True).decode()
-                        break
+                        html_body = part.get_payload(decode=True).decode()
                     except:
                         pass
-                elif content_type == "text/html" and not body and "attachment" not in content_disposition:
+                elif content_type == "text/plain":
                     try:
-                        body = part.get_payload(decode=True).decode()
+                        plain_body = part.get_payload(decode=True).decode()
                     except:
                         pass
         else:
             try:
-                body = msg.get_payload(decode=True).decode()
+                content_type = msg.get_content_type()
+                payload = msg.get_payload(decode=True).decode()
+                if content_type == "text/html":
+                    html_body = payload
+                else:
+                    plain_body = payload
             except:
                 pass
         
-        return body
+        # Priorizar HTML para el visor original
+        return html_body if html_body else plain_body
     
     def _classify_email(self, subject: str, body: str) -> str:
         """
@@ -170,10 +179,12 @@ class IMAPService:
                     return match.group(1)
         
         elif email_type == 'actualizacion_hogar':
-            # Para actualización de hogar, el link suele contener /household/ o /update-household/
+            # Para actualización de hogar, el link suele contener /household/, /update-household/ o /update-primary-location/
             patterns = [
                 r'https?://[^\s<>"]+netflix\.com/household/[^\s<>"]+',
                 r'https?://[^\s<>"]+netflix\.com/update-household/[^\s<>"]+',
+                r'https?://[^\s<>"]+netflix\.com/account/update-primary-location[^\s<>"]+',
+                r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?UPDATE_HOUSEHOLD[^\s<>"]*',
                 r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?household[^\s<>"]*',
             ]
             for pattern in patterns:
