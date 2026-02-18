@@ -175,7 +175,7 @@ Si experimentas bloqueos por parte de Gmail:
 ### Componentes
 
 - **app.py**: Servidor Flask con Socket.IO para actualizaciones en tiempo real
-- **outlook_service.py**: Servicio IMAP para conectar a Gmail y filtrar correos
+- **gmail_service.py**: Servicio IMAP para conectar a Gmail y filtrar correos
 - **templates/index.html**: Interfaz web moderna
 - **static/css/style.css**: Estilos con tema oscuro estilo Netflix
 - **static/js/app.js**: Lógica frontend con WebSockets

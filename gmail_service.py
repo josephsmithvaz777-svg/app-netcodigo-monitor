@@ -331,4 +331,3 @@ class GmailMonitor:
 
 # Mantener compatibilidad con código existente
 EmailMonitor = GmailMonitor
-OutlookMonitor = GmailMonitor

@@ -4,7 +4,7 @@ import json
 import os
 import logging
 from datetime import datetime
-from outlook_service import GmailMonitor
+from gmail_service import GmailMonitor
 import threading
 import time
 
