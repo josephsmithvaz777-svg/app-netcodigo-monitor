@@ -1,0 +1,6 @@
+{
+    "check_interval": 60,
+    "days_back": 1,
+    "auto_mark_read": false,
+    "notification_enabled": true
+}
