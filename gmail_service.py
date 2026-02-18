@@ -24,8 +24,11 @@ class IMAPService:
             r'código de verificación'
         ],
         'codigo_temporal': [
+            r'código de acceso temporal',
             r'código temporal',
+            r'obtener código',
             r'temporary code',
+            r'temporary access code',
             r'one-time code',
             r'código de un solo uso'
         ],
