@@ -405,15 +405,24 @@ body {
 
 /* Código destacado */
 .email-code {
-    background: rgba(229, 9, 20, 0.1);
-    border: 2px dashed var(--netflix-red);
+    background: rgba(229, 9, 20, 0.05);
+    /* Fondo más sutil */
+    border: 1px solid rgba(229, 9, 20, 0.2);
     border-radius: 6px;
-    padding: 12px;
+    padding: 16px;
     margin-top: 12px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    /* Cambiado a columna para mejor layout de botones */
+    gap: 12px;
     animation: glow 2s ease-in-out infinite;
+}
+
+.email-code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
 
 @keyframes glow {

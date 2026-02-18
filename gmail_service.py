@@ -149,14 +149,10 @@ class IMAPService:
         """
         if email_type == 'codigo_inicio':
             # Para código de inicio, buscar solo códigos con contexto específico de Netflix
-            # Evitar códigos de verificación genéricos
             patterns = [
-                # Buscar "código para iniciar sesión" seguido del código
                 r'(?:código|code).*?(?:iniciar sesión|sign-?in|login).*?(\d{4,8})',
                 r'(?:iniciar sesión|sign-?in|login).*?(?:código|code).*?(\d{4,8})',
-                # Buscar "Ingresa este código" seguido del código
                 r'(?:ingresa|enter).*?(?:este|this).*?(?:código|code).*?(\d{4,8})',
-                # Buscar el código en un contexto de inicio de sesión
                 r'(?:para|to).*?(?:iniciar sesión|sign in).*?(\d{4,8})',
             ]
             
@@ -165,29 +161,44 @@ class IMAPService:
                 if match:
                     return match.group(1)
             
-            # Si no encuentra con contexto, buscar números de 4 dígitos exactos
-            # pero solo si el correo menciona "sign-in" o "iniciar sesión"
             if re.search(r'sign-?in|iniciar sesión', body, re.IGNORECASE):
                 match = re.search(r'\b(\d{4})\b', body)
                 if match:
                     return match.group(1)
         
-        elif email_type in ['codigo_temporal', 'actualizacion_hogar']:
-            # Para código temporal y actualizar hogar, extraer el link
+        elif email_type == 'actualizacion_hogar':
+            # Para actualización de hogar, el link suele contener /household/ o /update-household/
             patterns = [
-                r'https?://[^\s<>"]+netflix\.com[^\s<>"]*',  # Links de Netflix
-                r'https?://account\.netflix\.com[^\s<>"]*',
-                r'https?://www\.netflix\.com[^\s<>"]*',
+                r'https?://[^\s<>"]+netflix\.com/household/[^\s<>"]+',
+                r'https?://[^\s<>"]+netflix\.com/update-household/[^\s<>"]+',
+                r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?household[^\s<>"]*',
             ]
-            
             for pattern in patterns:
                 match = re.search(pattern, body, re.IGNORECASE)
                 if match:
-                    # Limpiar el link de posibles caracteres HTML
-                    link = match.group(0)
-                    # Remover caracteres comunes al final que no son parte del link
-                    link = re.sub(r'[)\]}>"\'\s]+$', '', link)
-                    return link
+                    return re.sub(r'[)\]}>"\'\s]+$', '', match.group(0))
+            
+            # Si no encuentra el específico, buscar cualquier link de netflix que no sea de ayuda
+            all_links = re.findall(r'https?://[^\s<>"]+netflix\.com[^\s<>"]*', body)
+            for link in all_links:
+                if 'help' not in link.lower() and 'unsubscribe' not in link.lower() and 'privacy' not in link.lower():
+                    return re.sub(r'[)\]}>"\'\s]+$', '', link)
+
+        elif email_type == 'codigo_temporal':
+            # Para código temporal, el link suele contener /temporary-access/ o /code/
+            patterns = [
+                r'https?://[^\s<>"]+netflix\.com/temporary-access/[^\s<>"]+',
+                r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?access[^\s<>"]*',
+            ]
+            for pattern in patterns:
+                match = re.search(pattern, body, re.IGNORECASE)
+                if match:
+                    return re.sub(r'[)\]}>"\'\s]+$', '', match.group(0))
+            
+            all_links = re.findall(r'https?://[^\s<>"]+netflix\.com[^\s<>"]*', body)
+            for link in all_links:
+                if 'help' not in link.lower() and 'unsubscribe' not in link.lower():
+                    return re.sub(r'[)\]}>"\'\s]+$', '', link)
         
         return ""
     

@@ -431,36 +431,36 @@ function createEmailCard(email) {
         ${email.code ? `
             ${email.code.startsWith('http') ? `
                 <div class="email-code">
-                    <div>
-                        <div class="code-label">${email.type === 'actualizacion_hogar' ? 'Link para actualizar hogar:' : 'Link de acceso temporal:'}</div>
-                        <a href="${escapeHtml(email.code)}" target="_blank" class="btn btn-primary" style="margin-top: 8px;">
-                            <i class="fas fa-external-link-alt"></i>
-                            Abrir Link
-                        </a>
+                    <div class="email-code-header">
+                        <div class="code-label">${email.type === 'actualizacion_hogar' ? 'Confirmación de Hogar:' : 'Acceso Temporal:'}</div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-icon" onclick="openEmailModal('${email.id}')" title="Ver correo original">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar link">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn btn-icon" onclick="openEmailModal('${email.id}')" title="Ver correo original">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar link">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
+                    <a href="${escapeHtml(email.code)}" target="_blank" class="btn btn-primary" style="width: 100%; justify-content: center; font-weight: 700; padding: 14px;">
+                        <i class="fas fa-external-link-alt"></i>
+                        ${email.type === 'actualizacion_hogar' ? 'Sí, la envié yo' : 'Obtener código'}
+                    </a>
                 </div>
             ` : `
                 <div class="email-code">
-                    <div>
+                    <div class="email-code-header">
                         <div class="code-label">Código extraído:</div>
-                        <div class="code-value">${escapeHtml(email.code)}</div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-icon" onclick="openEmailModal('${email.id}')" title="Ver correo original">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar código">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn btn-icon" onclick="openEmailModal('${email.id}')" title="Ver correo original">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-icon" onclick="copyCode('${escapeHtml(email.code)}')" title="Copiar código">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
+                    <div class="code-value" style="text-align: center; width: 100%; margin-top: 8px;">${escapeHtml(email.code)}</div>
                 </div>
             `}
         ` : `
