@@ -5,6 +5,8 @@ import re
 from datetime import datetime, timedelta
 from typing import List, Dict
 import logging
+from email.utils import parsedate_to_datetime
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -246,12 +248,12 @@ class IMAPService:
         
         logger.info(f"[{self.email_address}] Buscando desde {search_date} (días: {days_back})")
         
-        # Buscar correos de Netflix de forma más eficiente en Gmail
-        # X-GM-RAW nos permite buscar con operadores tipo web (más potente)
-        search_query = f'from:netflix.com after:{(datetime.now() - timedelta(days=days_back)).strftime("%Y/%m/%d")}'
-        logger.info(f"[{self.email_address}] Buscando con query: {search_query}")
-        
         try:
+            # Buscar correos de Netflix de forma más eficiente en Gmail
+            # X-GM-RAW nos permite buscar con operadores tipo web (más potente)
+            # Usamos una búsqueda más amplia (un día extra atrás) para evitar problemas de zona horaria
+            search_query = f'from:netflix.com after:{(datetime.now() - timedelta(days=days_back + 1)).strftime("%Y/%m/%d")}'
+            logger.info(f"[{self.email_address}] Buscando con query: {search_query}")
             status, messages = self.mail.search(None, 'X-GM-RAW', search_query)
         except:
             # Fallback a búsqueda IMAP estándar si X-GM-RAW falla
@@ -284,23 +286,27 @@ class IMAPService:
                     if isinstance(response_part, tuple):
                         msg = email.message_from_bytes(response_part[1])
                         
-                        # Decodificar asunto y destinatarios
+                        # Decodificar asunto y remitente
                         subject = self._decode_mime_words(msg["Subject"])
                         from_address = self._decode_mime_words(msg["From"])
                         
-                        # Estrategia para obtener el destinatario real (especialmente con Cloudflare/redirecciones)
-                        # 1. Intentar Delivered-To (muy común en Gmail)
-                        to_address = self._decode_mime_words(msg["Delivered-To"])
+                        # Estrategia para obtener el destinatario real
+                        # Priorizamos el "To" del header porque suele contener la cuenta original (digitalacc09...)
+                        to_address = self._decode_mime_words(msg["To"])
                         
-                        # 2. Si no hay, usar X-Forwarded-To
+                        # Si no hay, probamos otros (fallback)
+                        if not to_address:
+                            to_address = self._decode_mime_words(msg["Delivered-To"])
                         if not to_address:
                             to_address = self._decode_mime_words(msg["X-Forwarded-To"])
-                            
-                        # 3. Si no hay, usar el To estándar
-                        if not to_address:
-                            to_address = self._decode_mime_words(msg["To"])
                         
+                        # Extraer fecha real para ordenamiento
                         date_str = msg["Date"]
+                        try:
+                            dt = parsedate_to_datetime(date_str)
+                            timestamp = dt.timestamp()
+                        except:
+                            timestamp = 0
                         
                         # Obtener cuerpo
                         body = self._get_email_body(msg)
@@ -318,6 +324,7 @@ class IMAPService:
                                 'from': from_address,
                                 'to': to_address,
                                 'date': date_str,
+                                'timestamp': timestamp,
                                 'type': email_type,
                                 'code': code,
                                 'body_preview': body[:200] if body else "",
@@ -391,8 +398,8 @@ class GmailMonitor:
                 logger.error(f"Error al procesar cuenta de Gmail {email_address}: {str(e)}")
                 continue
         
-        # Ordenar por fecha (más recientes primero)
-        all_emails.sort(key=lambda x: x['date'], reverse=True)
+        # Ordenar por timestamp numérico (más recientes primero)
+        all_emails.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
         
         return all_emails
 
