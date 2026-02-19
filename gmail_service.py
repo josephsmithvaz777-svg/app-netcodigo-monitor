@@ -244,13 +244,22 @@ class IMAPService:
         
         logger.info(f"[{self.email_address}] Buscando desde {search_date} (días: {days_back})")
         
-        # Buscar correos de Netflix de forma más flexible
-        # Intentamos primero con FROM de Netflix
-        status, messages = self.mail.search(None, f'(FROM "netflix.com" SINCE {search_date})')
+        # Buscar correos de Netflix de forma más eficiente en Gmail
+        # X-GM-RAW nos permite buscar con operadores tipo web (más potente)
+        search_query = f'from:netflix.com after:{(datetime.now() - timedelta(days=days_back)).strftime("%Y/%m/%d")}'
+        logger.info(f"[{self.email_address}] Buscando con query: {search_query}")
+        
+        try:
+            status, messages = self.mail.search(None, 'X-GM-RAW', f'"{search_query}"')
+        except:
+            # Fallback a búsqueda IMAP estándar si X-GM-RAW falla
+            search_date = (datetime.now() - timedelta(days=days_back + 1)).strftime("%d-%b-%Y")
+            status, messages = self.mail.search(None, f'(FROM "netflix.com" SINCE {search_date})')
         
         if status != "OK" or not messages[0]:
-            # Si falla, intentamos buscar por asunto "Netflix"
-            logger.info(f"[{self.email_address}] No se encontraron por remitente, intentando por asunto...")
+            # Segundo intento: buscar por palabra "Netflix"
+            logger.info(f"[{self.email_address}] Reintentando búsqueda general...")
+            search_date = (datetime.now() - timedelta(days=days_back + 1)).strftime("%d-%b-%Y")
             status, messages = self.mail.search(None, f'(SUBJECT "Netflix" SINCE {search_date})')
         
         if status != "OK":
@@ -276,7 +285,19 @@ class IMAPService:
                         # Decodificar asunto y destinatarios
                         subject = self._decode_mime_words(msg["Subject"])
                         from_address = self._decode_mime_words(msg["From"])
-                        to_address = self._decode_mime_words(msg["To"])
+                        
+                        # Estrategia para obtener el destinatario real (especialmente con Cloudflare/redirecciones)
+                        # 1. Intentar Delivered-To (muy común en Gmail)
+                        to_address = self._decode_mime_words(msg["Delivered-To"])
+                        
+                        # 2. Si no hay, usar X-Forwarded-To
+                        if not to_address:
+                            to_address = self._decode_mime_words(msg["X-Forwarded-To"])
+                            
+                        # 3. Si no hay, usar el To estándar
+                        if not to_address:
+                            to_address = self._decode_mime_words(msg["To"])
+                        
                         date_str = msg["Date"]
                         
                         # Obtener cuerpo
