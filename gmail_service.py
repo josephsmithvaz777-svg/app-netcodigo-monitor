@@ -39,7 +39,9 @@ class IMAPService:
             r'household update',
             r'update your netflix household',
             r'manage your household',
-            r'administra tu hogar'
+            r'administra tu hogar',
+            r'¿solicitaste actualizar',
+            r'actualizar.*?hogar'
         ]
     }
     
@@ -250,7 +252,7 @@ class IMAPService:
         logger.info(f"[{self.email_address}] Buscando con query: {search_query}")
         
         try:
-            status, messages = self.mail.search(None, 'X-GM-RAW', f'"{search_query}"')
+            status, messages = self.mail.search(None, 'X-GM-RAW', search_query)
         except:
             # Fallback a búsqueda IMAP estándar si X-GM-RAW falla
             search_date = (datetime.now() - timedelta(days=days_back + 1)).strftime("%d-%b-%Y")
