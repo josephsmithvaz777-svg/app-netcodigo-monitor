@@ -157,74 +157,92 @@ class IMAPService:
     
     def _extract_code_or_link(self, body: str, email_type: str) -> str:
         """
-        Extrae el código o link según el tipo de correo
-        
-        Args:
-            body: Cuerpo del correo
-            email_type: Tipo de correo (codigo_inicio, codigo_temporal, actualizacion_hogar)
-        
-        Returns:
-            El código o link encontrado, o cadena vacía
+        Extrae el código o link según el tipo de correo usando BeautifulSoup para mayor precisión
         """
+        if not body:
+            return ""
+
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(body, 'html.parser')
+        
+        # 1. Caso: Código de Inicio (Numérico)
         if email_type == 'codigo_inicio':
-            # Para código de inicio, buscar solo códigos con contexto específico de Netflix
+            # Primero intentar extraer del texto plano para evitar tags intermedios
+            text_content = soup.get_text(separator=' ')
             patterns = [
                 r'(?:código|code).*?(?:iniciar sesión|sign-?in|login).*?(\d{4,8})',
                 r'(?:iniciar sesión|sign-?in|login).*?(?:código|code).*?(\d{4,8})',
                 r'(?:ingresa|enter).*?(?:este|this).*?(?:código|code).*?(\d{4,8})',
                 r'(?:para|to).*?(?:iniciar sesión|sign in).*?(\d{4,8})',
             ]
-            
             for pattern in patterns:
-                match = re.search(pattern, body, re.IGNORECASE | re.DOTALL)
+                match = re.search(pattern, text_content, re.IGNORECASE | re.DOTALL)
                 if match:
                     return match.group(1)
             
-            if re.search(r'sign-?in|iniciar sesión', body, re.IGNORECASE):
-                match = re.search(r'\b(\d{4})\b', body)
+            # Fallback a 4 dígitos aislados si hay contexto de login
+            if re.search(r'sign-?in|iniciar sesión', text_content, re.IGNORECASE):
+                match = re.search(r'\b(\d{4,6})\b', text_content)
                 if match:
                     return match.group(1)
-        
-        elif email_type == 'actualizacion_hogar':
-            # Para actualización de hogar, el link suele contener /household/, /update-household/ o /update-primary-location/
-            patterns = [
-                r'https?://[^\s<>"]+netflix\.com/household/[^\s<>"]+',
-                r'https?://[^\s<>"]+netflix\.com/update-household/[^\s<>"]+',
-                r'https?://[^\s<>"]+netflix\.com/account/update-primary-location[^\s<>"]+',
-                r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?UPDATE_HOUSEHOLD[^\s<>"]*',
-                r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?household[^\s<>"]*',
-            ]
-            for pattern in patterns:
-                match = re.search(pattern, body, re.IGNORECASE)
-                if match:
-                    return re.sub(r'[)\]}>"\'\s]+$', '', match.group(0))
-            
-            # Si no encuentra el específico, buscar cualquier link de netflix que no sea de ayuda
-            all_links = re.findall(r'https?://[^\s<>"]+netflix\.com[^\s<>"]*', body)
-            for link in all_links:
-                if 'help' not in link.lower() and 'unsubscribe' not in link.lower() and 'privacy' not in link.lower():
-                    return re.sub(r'[)\]}>"\'\s]+$', '', link)
 
-        elif email_type == 'codigo_temporal':
-            # Para código temporal, el link suele contener /temporary-access/, /access/ o /otp/
-            patterns = [
-                r'https?://[^\s<>"]+netflix\.com/temporary-access/[^\s<>"]+',
-                r'https?://[^\s<>"]+netflix\.com/account/[^\s<>"]*?access[^\s<>"]*',
-                r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?access[^\s<>"]*',
-                r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?temp-access[^\s<>"]*',
-                r'https?://[^\s<>"]+netflix\.com/[^\s<>"]*?otp[^\s<>"]*',
-            ]
-            for pattern in patterns:
-                match = re.search(pattern, body, re.IGNORECASE)
-                if match:
-                    return re.sub(r'[)\]}>"\'\s]+$', '', match.group(0))
-            
-            all_links = re.findall(r'https?://[^\s<>"]+netflix\.com[^\s<>"]*', body)
-            for link in all_links:
-                if 'help' not in link.lower() and 'unsubscribe' not in link.lower():
-                    return re.sub(r'[)\]}>"\'\s]+$', '', link)
+        # 2. Caso: Links (Hogar o Temporal)
+        # Prioridad absoluta: Buscar el botón rojo de Netflix o links con estilo de botón
+        # Netflix suele usar tablas con background color o estilos inline para los botones
         
-        return ""
+        # Buscar todos los enlaces
+        all_links = soup.find_all('a', href=True)
+        
+        # Filtrar por prioridad
+        primary_link = None
+        
+        # Prioridad 1: Enlaces que contienen palabras clave en su texto (ej: "Sí, la envié yo", "Obtener código")
+        button_keywords = [
+            'sí, la envié yo', 'si, la envie yo', 'obtener código', 'obtener codigo', 
+            'get code', 'verify', 'update', 'actualizar', 'confirmar', 'yes, this was me'
+        ]
+        
+        for link in all_links:
+            link_text = link.get_text().lower().strip()
+            link_href = link['href']
+            
+            # Solo procesar links de netflix.com
+            if 'netflix.com' not in link_href:
+                continue
+                
+            # Evitar links de ayuda o legales
+            if any(word in link_href.lower() for word in ['help', 'privacy', 'unsubscribe', 'terms', 'contact']):
+                continue
+
+            # Si el texto coincide con un botón, es casi seguro que es el correcto
+            if any(keyword in link_text for keyword in button_keywords):
+                primary_link = link_href
+                break
+        
+        # Prioridad 2: Si no se encontró por texto, buscar en los patrones de URL (nmv, access, household)
+        if not primary_link:
+            patterns = []
+            if email_type == 'actualizacion_hogar':
+                patterns = [r'/household/', r'/update-household/', r'/update-primary-location/']
+            elif email_type == 'codigo_temporal':
+                patterns = [r'/temporary-access/', r'/access/', r'/otp/', r'/nmv/']
+                
+            for link in all_links:
+                link_href = link['href']
+                if 'netflix.com' in link_href:
+                    if any(re.search(p, link_href, re.IGNORECASE) for p in patterns):
+                        primary_link = link_href
+                        break
+
+        # Prioridad 3: Último recurso, el primer link de netflix que no sea basura
+        if not primary_link:
+            for link in all_links:
+                link_href = link['href']
+                if 'netflix.com' in link_href and not any(word in link_href.lower() for word in ['help', 'privacy', 'unsubscribe']):
+                    primary_link = link_href
+                    break
+                    
+        return primary_link if primary_link else ""
     
     def fetch_netflix_emails(self, days_back: int = 7) -> List[Dict]:
         """
