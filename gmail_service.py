@@ -366,6 +366,118 @@ class IMAPService:
         except Exception as e:
             logger.error(f"Error al marcar correo como leído: {str(e)}")
 
+    def wait_for_new_email(self, timeout: int = 25) -> bool:
+        """
+        Usa IMAP IDLE para esperar notificaciones push de Gmail.
+        Retorna True si llegó un correo nuevo, False si fue timeout.
+        El timeout máximo recomendado es 29 min (Gmail cierra IDLE a los 30 min).
+        """
+        try:
+            # Enviar comando IDLE
+            tag = self.mail._new_tag()
+            self.mail.send(f'{tag.decode()} IDLE\r\n'.encode())
+            
+            # Leer respuesta de confirmación "+ idling"
+            resp = self.mail.readline()
+            logger.debug(f"[{self.email_address}] IDLE iniciado: {resp.decode(errors='ignore').strip()}")
+            
+            # Esperar datos dentro del timeout
+            import select
+            sock = self.mail.socket()
+            readable, _, _ = select.select([sock], [], [], timeout)
+            
+            # Salir de IDLE
+            self.mail.send(b'DONE\r\n')
+            
+            if readable:
+                # Hay datos → llegó algo nuevo (EXISTS, FETCH, EXPUNGE…)
+                line = self.mail.readline()
+                logger.info(f"[{self.email_address}] IDLE notificación: {line.decode(errors='ignore').strip()}")
+                # Consumir respuesta final del servidor
+                try:
+                    self.mail.readline()
+                except:
+                    pass
+                return True
+            else:
+                # Timeout normal, sin notificación
+                try:
+                    self.mail.readline()
+                except:
+                    pass
+                return False
+
+        except Exception as e:
+            logger.warning(f"[{self.email_address}] IMAP IDLE no soportado o error: {str(e)}")
+            return False
+
+    def fetch_recent_netflix_emails(self, minutes_back: int = 10) -> List[Dict]:
+        """
+        Búsqueda rápida sólo de correos de los últimos N minutos.
+        Útil para el chequeo tras una notificación IDLE.
+        """
+        if not self.mail:
+            self.connect()
+
+        self.mail.select("INBOX")
+        search_date = (datetime.now() - timedelta(minutes=minutes_back)).strftime("%d-%b-%Y")
+
+        try:
+            search_query = f'from:netflix.com after:{(datetime.now() - timedelta(minutes=minutes_back)).strftime("%Y/%m/%d")}'
+            status, messages = self.mail.search(None, 'X-GM-RAW', search_query)
+        except Exception:
+            status, messages = self.mail.search(None, f'(FROM "netflix.com" SINCE {search_date})')
+
+        if status != "OK" or not messages[0]:
+            return []
+
+        email_ids = messages[0].split()
+        netflix_emails = []
+
+        for email_id in email_ids:
+            try:
+                status, msg_data = self.mail.fetch(email_id, "(RFC822)")
+                if status != "OK":
+                    continue
+                for response_part in msg_data:
+                    if isinstance(response_part, tuple):
+                        msg = email.message_from_bytes(response_part[1])
+                        subject = self._decode_mime_words(msg["Subject"])
+                        from_address = self._decode_mime_words(msg["From"])
+                        to_address = self._decode_mime_words(msg["To"])
+                        if not to_address:
+                            to_address = self._decode_mime_words(msg["Delivered-To"])
+                        if not to_address:
+                            to_address = self._decode_mime_words(msg["X-Forwarded-To"])
+                        date_str = msg["Date"]
+                        try:
+                            dt = parsedate_to_datetime(date_str)
+                            timestamp = dt.timestamp()
+                        except:
+                            timestamp = 0
+                        body = self._get_email_body(msg)
+                        email_type = self._classify_email(subject, body)
+                        if email_type:
+                            code = self._extract_code_or_link(body, email_type)
+                            netflix_emails.append({
+                                'id': email_id.decode(),
+                                'subject': subject,
+                                'from': from_address,
+                                'to': to_address,
+                                'date': date_str,
+                                'timestamp': timestamp,
+                                'type': email_type,
+                                'code': code,
+                                'body_preview': body[:200] if body else "",
+                                'body_full': body,
+                                'account': self.email_address
+                            })
+            except Exception as e:
+                logger.error(f"Error al procesar correo reciente {email_id}: {str(e)}")
+                continue
+
+        return netflix_emails
+
 
 class GmailMonitor:
     """Monitor para múltiples cuentas de Gmail"""

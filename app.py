@@ -60,60 +60,158 @@ def load_settings():
     except FileNotFoundError:
         logger.warning("Archivo settings.json no encontrado, usando valores por defecto")
         return {
-            'check_interval': 300,  # 5 minutos
+            'check_interval': 30,  # 30 segundos para detección casi en tiempo real
             'days_back': 7,
             'auto_mark_read': False
         }
     except Exception as e:
         logger.error(f"Error al cargar settings.json: {str(e)}")
         return {
-            'check_interval': 300,
+            'check_interval': 30,
             'days_back': 7,
             'auto_mark_read': False
         }
 
 def monitoring_loop():
-    """Loop de monitoreo en segundo plano"""
+    """
+    Loop de monitoreo en segundo plano.
+    Intenta usar IMAP IDLE (push en tiempo real).
+    Si IDLE no funciona, usa polling con el intervalo configurado.
+    """
     global netflix_emails, monitoring_active
-    
+
     settings = load_settings()
-    check_interval = settings.get('check_interval', 300)
+    check_interval = settings.get('check_interval', 30)
     days_back = settings.get('days_back', 7)
-    
-    logger.info(f"Iniciando loop de monitoreo (intervalo: {check_interval}s, días: {days_back})")
-    
+
+    logger.info(f"Iniciando loop de monitoreo (intervalo fallback: {check_interval}s, días: {days_back})")
+
+    # ── Carga inicial completa ──────────────────────────────────────────────
+    try:
+        if monitor:
+            logger.info("Carga inicial de correos de Netflix...")
+            netflix_emails = monitor.fetch_all_netflix_emails(days_back=days_back)
+            logger.info(f"Carga inicial completada: {len(netflix_emails)} correos encontrados")
+            socketio.emit('emails_updated', {
+                'total': len(netflix_emails),
+                'timestamp': datetime.now().isoformat()
+            })
+    except Exception as e:
+        logger.error(f"Error en carga inicial: {str(e)}")
+
+    # ── Loop principal con IMAP IDLE ────────────────────────────────────────
+    from gmail_service import IMAPService
+
+    idle_services = {}   # email_address → IMAPService con conexión persistente
+
+    def open_idle_connections():
+        """Abre conexiones persistentes para IDLE en todas las cuentas."""
+        accounts = load_accounts()
+        for acc in accounts:
+            addr = acc.get('email')
+            pwd  = acc.get('password')
+            if not addr or not pwd or addr in idle_services:
+                continue
+            try:
+                svc = IMAPService(email_address=addr, password=pwd)
+                svc.connect()
+                svc.mail.select("INBOX")
+                idle_services[addr] = svc
+                logger.info(f"Conexión IDLE abierta para {addr}")
+            except Exception as e:
+                logger.warning(f"No se pudo abrir conexión IDLE para {addr}: {e}")
+
+    open_idle_connections()
+
+    last_full_check = time.time()
+    FULL_CHECK_EVERY = 300   # Forzar re-verificación completa cada 5 min como respaldo
+
     while monitoring_active:
         try:
-            logger.info("Verificando correos de Netflix...")
-            
-            if monitor:
-                new_emails = monitor.fetch_all_netflix_emails(days_back=days_back)
-                
-                # Detectar nuevos correos
-                old_ids = {email['id'] for email in netflix_emails}
-                new_ids = {email['id'] for email in new_emails}
-                truly_new = new_ids - old_ids
-                
-                if truly_new:
-                    logger.info(f"Se encontraron {len(truly_new)} nuevos correos de Netflix")
-                    socketio.emit('new_emails', {
-                        'count': len(truly_new),
-                        'emails': [e for e in new_emails if e['id'] in truly_new]
+            new_found = False
+
+            # ── Escuchar IDLE en cada cuenta ────────────────────────────────
+            for addr, svc in list(idle_services.items()):
+                try:
+                    got_notification = svc.wait_for_new_email(timeout=check_interval)
+                    if got_notification:
+                        logger.info(f"[{addr}] Notificación IDLE recibida — buscando correos nuevos...")
+                        recent = svc.fetch_recent_netflix_emails(minutes_back=15)
+                        if recent:
+                            old_ids = {e['id'] for e in netflix_emails}
+                            truly_new = [e for e in recent if e['id'] not in old_ids]
+                            if truly_new:
+                                netflix_emails = truly_new + netflix_emails
+                                netflix_emails.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
+                                logger.info(f"[{addr}] {len(truly_new)} correos nuevos encontrados por IDLE")
+                                socketio.emit('new_emails', {
+                                    'count': len(truly_new),
+                                    'emails': truly_new
+                                })
+                                socketio.emit('emails_updated', {
+                                    'total': len(netflix_emails),
+                                    'timestamp': datetime.now().isoformat()
+                                })
+                                new_found = True
+                except Exception as e:
+                    logger.warning(f"[{addr}] Error en IDLE, reconectando: {e}")
+                    try:
+                        svc.disconnect()
+                    except:
+                        pass
+                    del idle_services[addr]
+                    # Intentar reconectar
+                    try:
+                        accounts = load_accounts()
+                        acc_data = next((a for a in accounts if a.get('email') == addr), None)
+                        if acc_data:
+                            new_svc = IMAPService(email_address=addr, password=acc_data['password'])
+                            new_svc.connect()
+                            new_svc.mail.select("INBOX")
+                            idle_services[addr] = new_svc
+                            logger.info(f"[{addr}] Reconectado exitosamente")
+                    except Exception as e2:
+                        logger.error(f"[{addr}] No se pudo reconectar: {e2}")
+
+            # ── Si no había conexiones IDLE, esperar el intervalo normal ────
+            if not idle_services:
+                logger.info("Sin conexiones IDLE activas, usando polling normal...")
+                time.sleep(check_interval)
+
+            # ── Verificación completa periódica (cada 5 min) ─────────────────
+            if time.time() - last_full_check >= FULL_CHECK_EVERY:
+                logger.info("Ejecutando verificación completa periódica...")
+                if monitor:
+                    all_emails = monitor.fetch_all_netflix_emails(days_back=days_back)
+                    old_ids = {e['id'] for e in netflix_emails}
+                    truly_new = [e for e in all_emails if e['id'] not in old_ids]
+                    if truly_new:
+                        netflix_emails = all_emails
+                        logger.info(f"Verificación completa encontró {len(truly_new)} correos nuevos")
+                        socketio.emit('new_emails', {
+                            'count': len(truly_new),
+                            'emails': truly_new
+                        })
+                    else:
+                        netflix_emails = all_emails
+                    socketio.emit('emails_updated', {
+                        'total': len(netflix_emails),
+                        'timestamp': datetime.now().isoformat()
                     })
-                
-                netflix_emails = new_emails
-                
-                # Emitir actualización a todos los clientes
-                socketio.emit('emails_updated', {
-                    'total': len(netflix_emails),
-                    'timestamp': datetime.now().isoformat()
-                })
-            
+                last_full_check = time.time()
+
         except Exception as e:
             logger.error(f"Error en loop de monitoreo: {str(e)}")
-        
-        # Esperar el intervalo configurado
-        time.sleep(check_interval)
+            time.sleep(check_interval)
+
+    # Cerrar conexiones IDLE al detener
+    for addr, svc in idle_services.items():
+        try:
+            svc.disconnect()
+        except:
+            pass
+    logger.info("Loop de monitoreo detenido.")
+
 
 @app.route('/')
 def index():
